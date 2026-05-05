@@ -67,3 +67,55 @@ func TestSameFormFunctor(t *testing.T) {
 	_, err = kitty.NewFunctor(c1, c2, objMap, mMap)
 	require.NoError(t, err)
 }
+
+func TestDifferentFormFunctor(t *testing.T) {
+	objects1 := []kitty.Object{"a", "b", "c"}
+	morphisms1 := []*kitty.Morphism{
+		{
+			ID:          "f",
+			Source:      "a",
+			Destination: "b",
+		},
+		{
+			ID:          "g",
+			Source:      "b",
+			Destination: "c",
+		},
+
+		{
+			ID:          "gf",
+			Source:      "a",
+			Destination: "c",
+		},
+	}
+	compose1 := map[[2]kitty.MorphismID]kitty.MorphismID{
+		{"f", "g"}: "gf",
+	}
+	c1, err := kitty.NewCategory(objects1, morphisms1, compose1)
+	require.NoError(t, err)
+
+	objects2 := []kitty.Object{"p", "q"}
+	morphisms2 := []*kitty.Morphism{
+		{
+			ID:          "h",
+			Source:      "p",
+			Destination: "q",
+		},
+	}
+	compose2 := map[[2]kitty.MorphismID]kitty.MorphismID{}
+	c2, err := kitty.NewCategory(objects2, morphisms2, compose2)
+	require.NoError(t, err)
+
+	objMap := map[kitty.Object]kitty.Object{
+		"a": "p",
+		"b": "q",
+		"c": "q",
+	}
+	mMap := map[kitty.MorphismID]kitty.MorphismID{
+		"f":  "h",
+		"g":  kitty.Identity,
+		"gf": "h",
+	}
+	_, err = kitty.NewFunctor(c1, c2, objMap, mMap)
+	require.NoError(t, err)
+}

@@ -5,8 +5,8 @@ import (
 )
 
 type Functor struct {
-	source      *Category
-	destination *Category
+	Source      *Category
+	Destination *Category
 	objectMap   map[Object]Object
 	morphismMap map[MorphismID]MorphismID
 }
@@ -15,13 +15,21 @@ func NewFunctor(
 	src, dst *Category, objectMap map[Object]Object, morphismMap map[MorphismID]MorphismID,
 ) (*Functor, error) {
 	f := &Functor{
-		source:      src,
-		destination: dst,
+		Source:      src,
+		Destination: dst,
 		objectMap:   objectMap,
 		morphismMap: morphismMap,
 	}
 	for srcObj, dstObj := range f.objectMap {
 		f.morphismMap[srcObj.GetIdentityID()] = dstObj.GetIdentityID()
+	}
+	for k, v := range f.morphismMap {
+		if v == Identity {
+			srcObj := f.Source.Morphisms[k].Source
+			mappedSrcObj := f.objectMap[srcObj]
+			// Here, we proceed under the assumption that F[srcObj] == F[dstObj].
+			f.morphismMap[k] = mappedSrcObj.GetIdentityID()
+		}
 	}
 	err := f.validate()
 	if err != nil {
@@ -32,8 +40,8 @@ func NewFunctor(
 
 func (f *Functor) validate() error {
 	// Type preservation
-	for id, m := range f.source.Morphisms {
-		fm, ok := f.destination.Morphisms[f.morphismMap[id]]
+	for id, m := range f.Source.Morphisms {
+		fm, ok := f.Destination.Morphisms[f.morphismMap[id]]
 		if !ok {
 			return fmt.Errorf("the destination of %s is not defined.", id)
 		}
@@ -50,31 +58,31 @@ func (f *Functor) validate() error {
 	}
 
 	// Identities
-	for _, m := range f.source.Morphisms {
+	for _, m := range f.Source.Morphisms {
 		if !m.IsIdentity() {
 			continue
 		}
-		if !f.destination.Morphisms[f.morphismMap[m.ID]].IsIdentity() {
+		if !f.Destination.Morphisms[f.morphismMap[m.ID]].IsIdentity() {
 			return fmt.Errorf("identity not preserved: src morphism=%s, dst morphism=%s",
 				m.ID, f.morphismMap[m.ID])
 		}
 	}
 
 	// Composition preservation
-	for _, f1 := range f.source.Morphisms {
-		for _, f2 := range f.source.Morphisms {
+	for _, f1 := range f.Source.Morphisms {
+		for _, f2 := range f.Source.Morphisms {
 			// Check if f2◦f1 is a valid morphism.
 			if f1.Destination != f2.Source {
 				continue
 			}
-			sourceComp, err := f.source.Compose(f1.ID, f2.ID)
+			sourceComp, err := f.Source.Compose(f1.ID, f2.ID)
 			if err != nil {
 				return err
 			}
 
 			Ff1 := f.morphismMap[f1.ID]
 			Ff2 := f.morphismMap[f2.ID]
-			destComp, err := f.destination.Compose(Ff1, Ff2)
+			destComp, err := f.Destination.Compose(Ff1, Ff2)
 			if err != nil {
 				return err
 			}
