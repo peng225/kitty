@@ -31,11 +31,49 @@ func NewFunctor(
 			f.morphismMap[k] = mappedSrcObj.GetIdentityID()
 		}
 	}
-	err := f.validate()
+	err := f.constructComposition()
+	if err != nil {
+		return nil, err
+	}
+	err = f.validate()
 	if err != nil {
 		return nil, err
 	}
 	return f, nil
+}
+
+func (f *Functor) constructComposition() error {
+	previousMMapCount := len(f.morphismMap)
+	for len(f.morphismMap) != len(f.Source.Morphisms) {
+		for _, m1 := range f.Source.Morphisms {
+			for _, m2 := range f.Source.Morphisms {
+				if m1.ID == m2.ID {
+					continue
+				}
+				composed, err := f.Source.Compose(m1.ID, m2.ID)
+				if err != nil {
+					// FIXME: should define the composition not found error.
+					continue
+				}
+				if _, ok := f.morphismMap[m1.ID]; !ok {
+					continue
+				}
+				if _, ok := f.morphismMap[m2.ID]; !ok {
+					continue
+				}
+				fm1CircFm2, err := f.Destination.Compose(f.morphismMap[m1.ID], f.morphismMap[m2.ID])
+				if err != nil {
+					return fmt.Errorf("failed to construct composition: %w", err)
+				}
+				f.morphismMap[composed] = fm1CircFm2
+			}
+		}
+		if previousMMapCount == len(f.morphismMap) {
+			return fmt.Errorf("composition construction stuck detected.")
+		}
+		previousMMapCount = len(f.morphismMap)
+	}
+	return nil
 }
 
 func (f *Functor) validate() error {

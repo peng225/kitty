@@ -65,9 +65,8 @@ func TestDifferentFunctorNaturalTransformation(t *testing.T) {
 		"c": "b",
 	}
 	mMap1 := map[kitty.MorphismID]kitty.MorphismID{
-		"f":  "p",
-		"g":  kitty.Identity,
-		"gf": "p",
+		"f": "p",
+		"g": kitty.Identity,
 	}
 	f, err := kitty.NewFunctor(c1, c2, objMap1, mMap1)
 	require.NoError(t, err)
@@ -78,9 +77,8 @@ func TestDifferentFunctorNaturalTransformation(t *testing.T) {
 		"c": "b",
 	}
 	mMap2 := map[kitty.MorphismID]kitty.MorphismID{
-		"f":  kitty.Identity,
-		"g":  "p",
-		"gf": "p",
+		"f": kitty.Identity,
+		"g": "p",
 	}
 	g, err := kitty.NewFunctor(c1, c2, objMap2, mMap2)
 	require.NoError(t, err)
