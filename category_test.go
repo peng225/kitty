@@ -39,7 +39,6 @@ func TestTwoObjectCategory(t *testing.T) {
 
 func TestInvalidMorphism(t *testing.T) {
 	objects := []kitty.Object{"a", "b"}
-	compose := map[[2]kitty.MorphismID]kitty.MorphismID{}
 
 	tests := map[string]struct {
 		m []*kitty.Morphism
@@ -67,6 +66,7 @@ func TestInvalidMorphism(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+			compose := map[[2]kitty.MorphismID]kitty.MorphismID{}
 			_, err := kitty.NewCategory(objects, test.m, compose)
 			require.Error(t, err)
 		})
@@ -94,6 +94,55 @@ func TestInvalidComposition(t *testing.T) {
 	}
 	compose := map[[2]kitty.MorphismID]kitty.MorphismID{
 		{"f", "g"}: "h",
+	}
+	_, err := kitty.NewCategory(objects, morphisms, compose)
+	require.Error(t, err)
+}
+
+func TestAssociativeLawViolation(t *testing.T) {
+	objects := []kitty.Object{"a", "b", "c", "d"}
+	morphisms := []*kitty.Morphism{
+		{
+			ID:          "f",
+			Source:      "a",
+			Destination: "b",
+		},
+		{
+			ID:          "g",
+			Source:      "b",
+			Destination: "c",
+		},
+		{
+			ID:          "h",
+			Source:      "c",
+			Destination: "d",
+		},
+		{
+			ID:          "gf",
+			Source:      "a",
+			Destination: "c",
+		},
+		{
+			ID:          "hgf",
+			Source:      "a",
+			Destination: "d",
+		},
+		{
+			ID:          "hg",
+			Source:      "b",
+			Destination: "d",
+		},
+		{
+			ID:          "hgf2",
+			Source:      "a",
+			Destination: "d",
+		},
+	}
+	compose := map[[2]kitty.MorphismID]kitty.MorphismID{
+		{"f", "g"}:  "gf",
+		{"g", "h"}:  "hg",
+		{"f", "hg"}: "hgf",
+		{"gf", "h"}: "hgf2",
 	}
 	_, err := kitty.NewCategory(objects, morphisms, compose)
 	require.Error(t, err)

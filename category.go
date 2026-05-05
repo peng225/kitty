@@ -69,7 +69,8 @@ func NewCategory(
 			if m.Source == o {
 				key := [2]MorphismID{o.GetIdentityID(), m.ID}
 				c.composeTable[key] = m.ID
-			} else if m.Destination == o {
+			}
+			if m.Destination == o {
 				key := [2]MorphismID{m.ID, o.GetIdentityID()}
 				c.composeTable[key] = m.ID
 			}
@@ -103,8 +104,16 @@ func (c *Category) Compose(f, g MorphismID) (MorphismID, error) {
 func (c *Category) validate() error {
 	// Type check
 	for key, res := range c.composeTable {
-		f := c.Morphisms[key[0]]
-		g := c.Morphisms[key[1]]
+		f, ok := c.Morphisms[key[0]]
+		if !ok {
+			return fmt.Errorf("invalid morphism %s found in the composition rule.",
+				key[0])
+		}
+		g, ok := c.Morphisms[key[1]]
+		if !ok {
+			return fmt.Errorf("invalid morphism %s found in the composition rule.",
+				key[1])
+		}
 
 		if f.Destination != g.Source {
 			return errors.New("invalid composition domain")
