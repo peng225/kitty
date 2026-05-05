@@ -16,7 +16,6 @@ func TestOneObjectCategory(t *testing.T) {
 			Destination: "a",
 		},
 	}
-	// 合成を指示するときに実装の詳細である"id_"が出てくるのは辛い。
 	compose := map[[2]kitty.MorphismID]kitty.MorphismID{
 		{"f", "f"}: kitty.Identity,
 	}
@@ -36,4 +35,66 @@ func TestTwoObjectCategory(t *testing.T) {
 	compose := map[[2]kitty.MorphismID]kitty.MorphismID{}
 	_, err := kitty.NewCategory(objects, morphisms, compose)
 	require.NoError(t, err)
+}
+
+func TestInvalidMorphism(t *testing.T) {
+	objects := []kitty.Object{"a", "b"}
+	compose := map[[2]kitty.MorphismID]kitty.MorphismID{}
+
+	tests := map[string]struct {
+		m []*kitty.Morphism
+	}{
+		"invalid source": {
+			m: []*kitty.Morphism{
+				{
+					ID:          "f",
+					Source:      "x",
+					Destination: "b",
+				},
+			},
+		},
+		"invalid destination": {
+			m: []*kitty.Morphism{
+				{
+					ID:          "f",
+					Source:      "a",
+					Destination: "x",
+				},
+			},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			_, err := kitty.NewCategory(objects, test.m, compose)
+			require.Error(t, err)
+		})
+	}
+}
+
+func TestInvalidComposition(t *testing.T) {
+	objects := []kitty.Object{"a", "b", "c"}
+	morphisms := []*kitty.Morphism{
+		{
+			ID:          "f",
+			Source:      "a",
+			Destination: "b",
+		},
+		{
+			ID:          "g",
+			Source:      "b",
+			Destination: "c",
+		},
+		{
+			ID:          "h",
+			Source:      "b",
+			Destination: "c",
+		},
+	}
+	compose := map[[2]kitty.MorphismID]kitty.MorphismID{
+		{"f", "g"}: "h",
+	}
+	_, err := kitty.NewCategory(objects, morphisms, compose)
+	require.Error(t, err)
 }

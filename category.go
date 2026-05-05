@@ -2,6 +2,7 @@ package kitty
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -17,7 +18,7 @@ type Morphism struct {
 }
 
 type Category struct {
-	Objects   []Object
+	Objects   map[Object]struct{}
 	Morphisms map[MorphismID]*Morphism
 
 	// key: f,g -> g∘f
@@ -34,8 +35,12 @@ func (m *Morphism) IsIdentity() bool {
 }
 
 func NewCategory(
-	objects []Object, morphisms []*Morphism, compose map[[2]MorphismID]MorphismID,
+	objs []Object, morphisms []*Morphism, compose map[[2]MorphismID]MorphismID,
 ) (*Category, error) {
+	objects := make(map[Object]struct{})
+	for _, o := range objs {
+		objects[o] = struct{}{}
+	}
 	c := &Category{
 		Objects:      objects,
 		Morphisms:    make(map[MorphismID]*Morphism),
@@ -49,7 +54,7 @@ func NewCategory(
 		c.Morphisms[m.ID] = m
 	}
 
-	for _, o := range c.Objects {
+	for o := range c.Objects {
 		id := o.GetIdentityID()
 		m := &Morphism{
 			ID:          id,
@@ -59,7 +64,7 @@ func NewCategory(
 		c.Morphisms[m.ID] = m
 	}
 
-	for _, o := range c.Objects {
+	for o := range c.Objects {
 		for _, m := range c.Morphisms {
 			if m.Source == o {
 				key := [2]MorphismID{o.GetIdentityID(), m.ID}
@@ -112,22 +117,31 @@ func (c *Category) validate() error {
 	}
 
 	// Associative law
-	for fID := range c.Morphisms {
-		for gID := range c.Morphisms {
-			for hID := range c.Morphisms {
-
-				f, ok1 := c.Compose(fID, gID)
-				g, ok2 := c.Compose(gID, hID)
+	for f := range c.Morphisms {
+		for g := range c.Morphisms {
+			for h := range c.Morphisms {
+				gf, ok1 := c.Compose(f, g)
+				hg, ok2 := c.Compose(g, h)
 
 				if ok1 == nil && ok2 == nil {
-					left, err1 := c.Compose(f, hID)
-					right, err2 := c.Compose(fID, g)
+					left, err1 := c.Compose(gf, h)
+					right, err2 := c.Compose(f, hg)
 
 					if err1 == nil && err2 == nil && left != right {
 						return errors.New("associativity failed")
 					}
 				}
 			}
+		}
+	}
+
+	// Invalid source or destination
+	for _, m := range c.Morphisms {
+		if _, ok := c.Objects[m.Source]; !ok {
+			return fmt.Errorf("%s has an invalid source: %s", m.ID, m.Source)
+		}
+		if _, ok := c.Objects[m.Destination]; !ok {
+			return fmt.Errorf("%s has an invalid destination: %s", m.ID, m.Destination)
 		}
 	}
 
