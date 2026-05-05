@@ -166,3 +166,16 @@ func TestUnknownMorphismInComposition(t *testing.T) {
 	_, err := kitty.NewCategory(objects, morphisms, compose)
 	require.Error(t, err)
 }
+
+func TestInverse(t *testing.T) {
+	objects := []kitty.Object{"a", "b"}
+	f := &kitty.Morphism{
+		ID:          "f",
+		Source:      "a",
+		Destination: "b",
+	}
+	morphisms := []*kitty.Morphism{f, f.Inverse()}
+	compose := map[[2]kitty.MorphismID]kitty.MorphismID{}
+	_, err := kitty.NewCategory(objects, morphisms, compose)
+	require.NoError(t, err)
+}

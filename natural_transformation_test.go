@@ -45,14 +45,16 @@ func TestDifferentFunctorNaturalTransformation(t *testing.T) {
 	require.NoError(t, err)
 
 	objects2 := []kitty.Object{"a", "b"}
+	p := &kitty.Morphism{
+		ID:          "p",
+		Source:      "a",
+		Destination: "b",
+	}
 	morphisms2 := []*kitty.Morphism{
-		{"p", "a", "b"},
-		{"p^{-1}", "b", "a"},
+		p,
+		p.Inverse(),
 	}
-	compose2 := map[[2]kitty.MorphismID]kitty.MorphismID{
-		{"p", "p^{-1}"}: kitty.Identity,
-		{"p^{-1}", "p"}: kitty.Identity,
-	}
+	compose2 := map[[2]kitty.MorphismID]kitty.MorphismID{}
 	c2, err := kitty.NewCategory(objects2, morphisms2, compose2)
 	require.NoError(t, err)
 
@@ -82,7 +84,7 @@ func TestDifferentFunctorNaturalTransformation(t *testing.T) {
 
 	comp := map[kitty.Object]kitty.MorphismID{
 		"a": kitty.Identity,
-		"b": "p^{-1}",
+		"b": p.Inverse().ID,
 		"c": kitty.Identity,
 	}
 	_, err = kitty.NewNaturalTransformation(f, g, comp)

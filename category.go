@@ -34,6 +34,21 @@ func (m *Morphism) IsIdentity() bool {
 		m.Source == m.Destination
 }
 
+func (m *Morphism) Inverse() *Morphism {
+	var inverseID MorphismID
+	if strings.HasSuffix(string(m.ID), "^{-1}") {
+		inverseID = MorphismID(strings.TrimSuffix(string(m.ID), "^{-1}"))
+	} else {
+		inverseID = m.ID + "^{-1}"
+	}
+
+	return &Morphism{
+		ID:          inverseID,
+		Source:      m.Destination,
+		Destination: m.Source,
+	}
+}
+
 func NewCategory(
 	objs []Object, morphisms []*Morphism, compose map[[2]MorphismID]MorphismID,
 ) (*Category, error) {
@@ -114,6 +129,9 @@ func (c *Category) constructComposition() error {
 					c.composeTable[key] = composedID
 				case m2.IsIdentity():
 					composedID := m1.ID
+					c.composeTable[key] = composedID
+				case m1.Inverse().ID == m2.ID:
+					composedID := m1.Source.GetIdentityID()
 					c.composeTable[key] = composedID
 				default:
 					// e.g. m1.ID = f, m2.ID = g => gf
