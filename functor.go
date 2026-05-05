@@ -96,3 +96,7 @@ func (f *Functor) validate() error {
 
 	return nil
 }
+
+func (f *Functor) MapMorphism(m MorphismID) MorphismID {
+	return f.morphismMap[m]
+}

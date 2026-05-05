@@ -96,7 +96,8 @@ func (c *Category) Compose(f, g MorphismID) (MorphismID, error) {
 	key := [2]MorphismID{f, g}
 	res, ok := c.composeTable[key]
 	if !ok {
-		return "", errors.New("composition not defined")
+		return "", fmt.Errorf("composition not defined for %s and %s",
+			f, g)
 	}
 	return res, nil
 }
