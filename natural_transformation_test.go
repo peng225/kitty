@@ -39,11 +39,8 @@ func TestDifferentFunctorNaturalTransformation(t *testing.T) {
 	morphisms1 := []*kitty.Morphism{
 		{"f", "a", "b"},
 		{"g", "b", "c"},
-		{"gf", "a", "c"},
 	}
-	compose1 := map[[2]kitty.MorphismID]kitty.MorphismID{
-		{"f", "g"}: "gf",
-	}
+	compose1 := map[[2]kitty.MorphismID]kitty.MorphismID{}
 	c1, err := kitty.NewCategory(objects1, morphisms1, compose1)
 	require.NoError(t, err)
 

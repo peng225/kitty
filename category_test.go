@@ -73,7 +73,7 @@ func TestInvalidMorphism(t *testing.T) {
 	}
 }
 
-func TestInvalidComposition(t *testing.T) {
+func TestComposition(t *testing.T) {
 	objects := []kitty.Object{"a", "b", "c"}
 	morphisms := []*kitty.Morphism{
 		{
@@ -92,11 +92,9 @@ func TestInvalidComposition(t *testing.T) {
 			Destination: "c",
 		},
 	}
-	compose := map[[2]kitty.MorphismID]kitty.MorphismID{
-		{"f", "g"}: "h",
-	}
+	compose := map[[2]kitty.MorphismID]kitty.MorphismID{}
 	_, err := kitty.NewCategory(objects, morphisms, compose)
-	require.Error(t, err)
+	require.NoError(t, err)
 }
 
 func TestAssociativeLawViolation(t *testing.T) {
@@ -143,6 +141,27 @@ func TestAssociativeLawViolation(t *testing.T) {
 		{"g", "h"}:  "hg",
 		{"f", "hg"}: "hgf",
 		{"gf", "h"}: "hgf2",
+	}
+	_, err := kitty.NewCategory(objects, morphisms, compose)
+	require.Error(t, err)
+}
+
+func TestUnknownMorphismInComposition(t *testing.T) {
+	objects := []kitty.Object{"a", "b", "c"}
+	morphisms := []*kitty.Morphism{
+		{
+			ID:          "f",
+			Source:      "a",
+			Destination: "b",
+		},
+		{
+			ID:          "g",
+			Source:      "b",
+			Destination: "c",
+		},
+	}
+	compose := map[[2]kitty.MorphismID]kitty.MorphismID{
+		{"f", "g"}: "gf",
 	}
 	_, err := kitty.NewCategory(objects, morphisms, compose)
 	require.Error(t, err)

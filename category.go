@@ -64,19 +64,6 @@ func NewCategory(
 		c.Morphisms[m.ID] = m
 	}
 
-	for o := range c.Objects {
-		for _, m := range c.Morphisms {
-			if m.Source == o {
-				key := [2]MorphismID{o.GetIdentityID(), m.ID}
-				c.composeTable[key] = m.ID
-			}
-			if m.Destination == o {
-				key := [2]MorphismID{m.ID, o.GetIdentityID()}
-				c.composeTable[key] = m.ID
-			}
-		}
-	}
-
 	processedCompose := c.composeTable
 	for k, v := range compose {
 		if v == Identity {
@@ -85,11 +72,72 @@ func NewCategory(
 		}
 	}
 
+	for k, v := range c.composeTable {
+		for _, w := range []MorphismID{k[0], k[1], v} {
+			if _, ok := c.Morphisms[w]; !ok {
+				return nil, fmt.Errorf("unknown morphism found in the composition definition: %s", w)
+			}
+		}
+	}
+
+	err := c.constructComposition()
+	if err != nil {
+		return nil, err
+	}
+
 	if err := c.validate(); err != nil {
 		return nil, err
 	}
 
 	return c, nil
+}
+
+func (c *Category) constructComposition() error {
+	initialMorphismCount := len(c.Morphisms)
+	previousCTableCount := len(c.composeTable)
+	for len(c.Morphisms) < initialMorphismCount*initialMorphismCount {
+		toBeAddedMorphisms := make([]*Morphism, 0)
+		for _, m1 := range c.Morphisms {
+			for _, m2 := range c.Morphisms {
+				if m1.Destination != m2.Source {
+					continue
+				}
+
+				key := [2]MorphismID{m1.ID, m2.ID}
+				if _, ok := c.composeTable[key]; ok {
+					continue
+				}
+				switch {
+				case m1.IsIdentity():
+					// This case contains (m1.ID, m2.ID) = (identity, identity).
+					composedID := m2.ID
+					c.composeTable[key] = composedID
+				case m2.IsIdentity():
+					composedID := m1.ID
+					c.composeTable[key] = composedID
+				default:
+					// e.g. m1.ID = f, m2.ID = g => gf
+					composedID := m2.ID + m1.ID
+					c.composeTable[key] = composedID
+					toBeAddedMorphisms = append(toBeAddedMorphisms,
+						&Morphism{
+							ID:          composedID,
+							Source:      m1.Source,
+							Destination: m2.Destination,
+						},
+					)
+				}
+			}
+		}
+		for _, m := range toBeAddedMorphisms {
+			c.Morphisms[m.ID] = m
+		}
+		if previousCTableCount == len(c.composeTable) {
+			return nil
+		}
+		previousCTableCount = len(c.composeTable)
+	}
+	return errors.New("composition construction stuck detected.")
 }
 
 func (c *Category) Compose(f, g MorphismID) (MorphismID, error) {

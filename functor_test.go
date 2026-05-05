@@ -81,15 +81,8 @@ func TestDifferentFormFunctor(t *testing.T) {
 			Source:      "b",
 			Destination: "c",
 		},
-		{
-			ID:          "gf",
-			Source:      "a",
-			Destination: "c",
-		},
 	}
-	compose1 := map[[2]kitty.MorphismID]kitty.MorphismID{
-		{"f", "g"}: "gf",
-	}
+	compose1 := map[[2]kitty.MorphismID]kitty.MorphismID{}
 	c1, err := kitty.NewCategory(objects1, morphisms1, compose1)
 	require.NoError(t, err)
 
@@ -136,28 +129,8 @@ func TestLongMorphismChain(t *testing.T) {
 			Source:      "c",
 			Destination: "d",
 		},
-		{
-			ID:          "gf",
-			Source:      "a",
-			Destination: "c",
-		},
-		{
-			ID:          "hgf",
-			Source:      "a",
-			Destination: "d",
-		},
-		{
-			ID:          "hg",
-			Source:      "b",
-			Destination: "d",
-		},
 	}
-	compose := map[[2]kitty.MorphismID]kitty.MorphismID{
-		{"f", "g"}:  "gf",
-		{"g", "h"}:  "hg",
-		{"f", "hg"}: "hgf",
-		{"gf", "h"}: "hgf",
-	}
+	compose := map[[2]kitty.MorphismID]kitty.MorphismID{}
 	c, err := kitty.NewCategory(objects, morphisms, compose)
 	require.NoError(t, err)
 
