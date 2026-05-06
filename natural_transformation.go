@@ -76,7 +76,7 @@ func (nt *NaturalTransformation) ComposeWith(nt2 *NaturalTransformation) (*Natur
 		a := nt.Components[obj]
 		b, ok := nt2.Components[obj]
 		if !ok {
-			return nil, fmt.Errorf("nt2 does not have %s component.", obj)
+			return nil, fmt.Errorf("nt2 does not have %s component", obj)
 		}
 		comp, err := nt.Source.Destination.Compose(a, b)
 		if err != nil {
@@ -125,6 +125,9 @@ func (nt *NaturalTransformation) ApplyFunctorRight(F *Functor) (*NaturalTransfor
 		return nil, err
 	}
 	NTDestinationAndF, err := F.ComposeWith(nt.Destination)
+	if err != nil {
+		return nil, err
+	}
 
 	components := make(map[Object]MorphismID)
 	for obj := range F.Source.Objects {

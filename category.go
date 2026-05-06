@@ -65,7 +65,7 @@ func NewCategory(
 
 	for _, m := range morphisms {
 		if strings.Contains(string(m.ID), "_") {
-			return nil, errors.New("Morphism names with '_' cannot be used.")
+			return nil, errors.New("Morphism names with '_' cannot be used")
 		}
 		c.Morphisms[m.ID] = m
 	}
@@ -164,7 +164,7 @@ func (c *Category) constructComposition() error {
 		}
 		previousCTableCount = len(c.composeTable)
 	}
-	return errors.New("composition construction stuck detected.")
+	return errors.New("composition construction stuck detected")
 }
 
 func (c *Category) Compose(f, g MorphismID) (MorphismID, error) {
@@ -179,10 +179,7 @@ func (c *Category) Compose(f, g MorphismID) (MorphismID, error) {
 
 func containsAsSubsequence(tokens, subTokens []string) bool {
 	if len(tokens) == 0 {
-		if len(subTokens) == 0 {
-			return true
-		}
-		return false
+		return len(subTokens) == 0
 	}
 	if len(subTokens) == 0 {
 		return true
@@ -200,12 +197,12 @@ func (c *Category) validate() error {
 	for key, res := range c.composeTable {
 		f, ok := c.Morphisms[key[0]]
 		if !ok {
-			return fmt.Errorf("invalid morphism %s found in the composition rule.",
+			return fmt.Errorf("invalid morphism %s found in the composition rule",
 				key[0])
 		}
 		g, ok := c.Morphisms[key[1]]
 		if !ok {
-			return fmt.Errorf("invalid morphism %s found in the composition rule.",
+			return fmt.Errorf("invalid morphism %s found in the composition rule",
 				key[1])
 		}
 

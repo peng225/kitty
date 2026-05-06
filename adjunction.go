@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	ErrorTriangleIdentityViolation = errors.New("triangle identity violation.")
+	ErrorTriangleIdentityViolation = errors.New("triangle identity violation")
 )
 
 func CheckAdjunction(F, G *Functor, eta, epsilon *NaturalTransformation) error {
