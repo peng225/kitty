@@ -138,3 +138,41 @@ func (f *Functor) validate() error {
 func (f *Functor) MapMorphism(m MorphismID) MorphismID {
 	return f.morphismMap[m]
 }
+
+func (f *Functor) ComposeWith(g *Functor) (*Functor, error) {
+	// If F: A→B and G: B→C, then G∘F: A→C
+	objMap := make(map[Object]Object)
+	mMap := make(map[MorphismID]MorphismID)
+	for obj := range f.Source.Objects {
+		objMap[obj] = g.objectMap[f.objectMap[obj]]
+	}
+	for m := range f.Source.Morphisms {
+		mMap[m] = g.morphismMap[f.morphismMap[m]]
+	}
+
+	h, err := NewFunctor(
+		f.Source, g.Destination, objMap, mMap,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return h, nil
+}
+
+func IdentityFunctor(c *Category) (*Functor, error) {
+	objMap := make(map[Object]Object)
+	mMap := make(map[MorphismID]MorphismID)
+	for obj := range c.Objects {
+		objMap[obj] = obj
+	}
+	for m := range c.Morphisms {
+		mMap[m] = m
+	}
+	f, err := NewFunctor(c, c, objMap, mMap)
+	if err != nil {
+		return nil, err
+	}
+
+	return f, nil
+}

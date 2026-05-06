@@ -179,3 +179,22 @@ func TestInverse(t *testing.T) {
 	_, err := kitty.NewCategory(objects, morphisms, compose)
 	require.NoError(t, err)
 }
+
+func TestMorphismLoop(t *testing.T) {
+	objects := []kitty.Object{"a", "b"}
+	morphisms := []*kitty.Morphism{
+		{
+			ID:          "f",
+			Source:      "a",
+			Destination: "b",
+		},
+		{
+			ID:          "g",
+			Source:      "b",
+			Destination: "a",
+		},
+	}
+	compose := map[[2]kitty.MorphismID]kitty.MorphismID{}
+	_, err := kitty.NewCategory(objects, morphisms, compose)
+	require.NoError(t, err)
+}

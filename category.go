@@ -3,6 +3,7 @@ package kitty
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -63,8 +64,8 @@ func NewCategory(
 	}
 
 	for _, m := range morphisms {
-		if strings.HasPrefix(string(m.ID), "_") {
-			return nil, errors.New("Morphism name should not start with '_'.")
+		if strings.Contains(string(m.ID), "_") {
+			return nil, errors.New("Morphism names with '_' cannot be used.")
 		}
 		c.Morphisms[m.ID] = m
 	}
@@ -134,8 +135,16 @@ func (c *Category) constructComposition() error {
 					composedID := m1.Source.GetIdentityID()
 					c.composeTable[key] = composedID
 				default:
-					// e.g. m1.ID = f, m2.ID = g => gf
-					composedID := m2.ID + m1.ID
+					// Avoid the infinite morphism loop.
+					// e.g. m1.ID = "g_f", m2.ID = "f"
+					m1IDTokens := strings.Split(string(m1.ID), "_")
+					m2IDTokens := strings.Split(string(m2.ID), "_")
+					if containsAsSubsequence(m1IDTokens, m2IDTokens) ||
+						containsAsSubsequence(m2IDTokens, m1IDTokens) {
+						continue
+					}
+					// e.g. m1.ID = "f", m2.ID = "g" => "g_f"
+					composedID := MorphismID(fmt.Sprintf("%s_%s", m2.ID, m1.ID))
 					c.composeTable[key] = composedID
 					toBeAddedMorphisms = append(toBeAddedMorphisms,
 						&Morphism{
@@ -166,6 +175,24 @@ func (c *Category) Compose(f, g MorphismID) (MorphismID, error) {
 			f, g)
 	}
 	return res, nil
+}
+
+func containsAsSubsequence(tokens, subTokens []string) bool {
+	if len(tokens) == 0 {
+		if len(subTokens) == 0 {
+			return true
+		}
+		return false
+	}
+	if len(subTokens) == 0 {
+		return true
+	}
+	i := slices.Index(tokens, subTokens[0])
+	if i == -1 {
+		return false
+	}
+	partialTokens := tokens[i:min(len(tokens), i+len(subTokens))]
+	return slices.Compare(partialTokens, subTokens) == 0
 }
 
 func (c *Category) validate() error {
