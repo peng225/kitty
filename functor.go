@@ -69,7 +69,7 @@ func (f *Functor) constructComposition() error {
 			}
 		}
 		if previousMMapCount == len(f.morphismMap) {
-			return fmt.Errorf("composition construction stuck detected.")
+			return fmt.Errorf("composition construction stuck detected")
 		}
 		previousMMapCount = len(f.morphismMap)
 	}
@@ -81,7 +81,7 @@ func (f *Functor) validate() error {
 	for id, m := range f.Source.Morphisms {
 		fm, ok := f.Destination.Morphisms[f.morphismMap[id]]
 		if !ok {
-			return fmt.Errorf("the destination of %s is not defined.", id)
+			return fmt.Errorf("the destination of %s is not defined", id)
 		}
 
 		if fm.Source != f.objectMap[m.Source] {
