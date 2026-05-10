@@ -135,6 +135,10 @@ func (F *Functor) validate() error {
 	return nil
 }
 
+func (F *Functor) MapObject(o Object) Object {
+	return F.objectMap[o]
+}
+
 func (F *Functor) MapMorphism(m MorphismID) MorphismID {
 	return F.morphismMap[m]
 }
