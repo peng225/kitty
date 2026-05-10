@@ -64,8 +64,9 @@ func TestSameFormFunctor(t *testing.T) {
 	mMap := map[kitty.MorphismID]kitty.MorphismID{
 		"f": "g",
 	}
-	_, err = kitty.NewFunctor(c1, c2, objMap, mMap)
+	F, err := kitty.NewFunctor(c1, c2, objMap, mMap)
 	require.NoError(t, err)
+	require.True(t, F.IsEquivalence())
 }
 
 func TestDifferentFormFunctor(t *testing.T) {
@@ -107,8 +108,9 @@ func TestDifferentFormFunctor(t *testing.T) {
 		"f": "h",
 		"g": kitty.Identity,
 	}
-	_, err = kitty.NewFunctor(c1, c2, objMap, mMap)
+	F, err := kitty.NewFunctor(c1, c2, objMap, mMap)
 	require.NoError(t, err)
+	require.False(t, F.IsEquivalence())
 }
 
 func TestLongMorphismChain(t *testing.T) {
@@ -147,4 +149,95 @@ func TestLongMorphismChain(t *testing.T) {
 	}
 	_, err = kitty.NewFunctor(c, c, objMap, mMap)
 	require.NoError(t, err)
+}
+
+func TestFunctorProperties(t *testing.T) {
+	f := &kitty.Morphism{
+		ID:          "f",
+		Source:      "a",
+		Destination: "b",
+	}
+	g := &kitty.Morphism{
+		ID:          "g",
+		Source:      "a",
+		Destination: "b",
+	}
+	u := &kitty.Morphism{
+		ID:          "u",
+		Source:      "p",
+		Destination: "q",
+	}
+	v := &kitty.Morphism{
+		ID:          "v",
+		Source:      "p",
+		Destination: "q",
+	}
+	w := &kitty.Morphism{
+		ID:          "w",
+		Source:      "q",
+		Destination: "r",
+	}
+	tests := map[string]struct {
+		objs1                   []kitty.Object
+		morphisms1              []*kitty.Morphism
+		objs2                   []kitty.Object
+		morphisms2              []*kitty.Morphism
+		objMap                  map[kitty.Object]kitty.Object
+		mMap                    map[kitty.MorphismID]kitty.MorphismID
+		isFaithful              bool
+		isFull                  bool
+		isEssentiallySurjective bool
+	}{
+		"faithful, not full, essentially surjective": {
+			objs1:      []kitty.Object{"a", "b"},
+			morphisms1: []*kitty.Morphism{f},
+			objs2:      []kitty.Object{"p", "q", "r"},
+			morphisms2: []*kitty.Morphism{u, v, w, w.Inverse()},
+			objMap: map[kitty.Object]kitty.Object{
+				"a": "p",
+				"b": "q",
+			},
+			mMap: map[kitty.MorphismID]kitty.MorphismID{
+				"f": "u",
+			},
+			isFaithful:              true,
+			isFull:                  false,
+			isEssentiallySurjective: true,
+		},
+		"not faithful, full, not essentially surjective": {
+			objs1:      []kitty.Object{"a", "b"},
+			morphisms1: []*kitty.Morphism{f, g},
+			objs2:      []kitty.Object{"p", "q", "r"},
+			morphisms2: []*kitty.Morphism{u, w},
+			objMap: map[kitty.Object]kitty.Object{
+				"a": "p",
+				"b": "q",
+			},
+			mMap: map[kitty.MorphismID]kitty.MorphismID{
+				"f": "u",
+				"g": "u",
+			},
+			isFaithful:              false,
+			isFull:                  true,
+			isEssentiallySurjective: false,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			compose1 := map[[2]kitty.MorphismID]kitty.MorphismID{}
+			c1, err := kitty.NewCategory(test.objs1, test.morphisms1, compose1)
+			require.NoError(t, err)
+			compose2 := map[[2]kitty.MorphismID]kitty.MorphismID{}
+			c2, err := kitty.NewCategory(test.objs2, test.morphisms2, compose2)
+			require.NoError(t, err)
+
+			F, err := kitty.NewFunctor(c1, c2, test.objMap, test.mMap)
+			require.NoError(t, err)
+			require.Equal(t, test.isFaithful, F.IsFaithful())
+			require.Equal(t, test.isFull, F.IsFull())
+			require.Equal(t, test.isEssentiallySurjective, F.IsEssentiallySurjective())
+		})
+	}
 }

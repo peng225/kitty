@@ -198,3 +198,76 @@ func TestMorphismLoop(t *testing.T) {
 	_, err := kitty.NewCategory(objects, morphisms, compose)
 	require.NoError(t, err)
 }
+
+func TestComplicatedInverseChain(t *testing.T) {
+	objects := []kitty.Object{"a", "b", "c"}
+	f := &kitty.Morphism{
+		ID:          "f",
+		Source:      "a",
+		Destination: "b",
+	}
+	g := &kitty.Morphism{
+		ID:          "g",
+		Source:      "b",
+		Destination: "a",
+	}
+	morphisms := []*kitty.Morphism{
+		f, f.Inverse(), g, g.Inverse(),
+		{
+			ID:          "h",
+			Source:      "a",
+			Destination: "c",
+		},
+	}
+	compose := map[[2]kitty.MorphismID]kitty.MorphismID{}
+	_, err := kitty.NewCategory(objects, morphisms, compose)
+	require.NoError(t, err)
+}
+
+func TestHom(t *testing.T) {
+	objects := []kitty.Object{"a", "b"}
+	morphisms := []*kitty.Morphism{
+		{
+			ID:          "f",
+			Source:      "a",
+			Destination: "b",
+		},
+	}
+	compose := map[[2]kitty.MorphismID]kitty.MorphismID{}
+	C, err := kitty.NewCategory(objects, morphisms, compose)
+	require.NoError(t, err)
+
+	hom := C.Hom("a", "b")
+	require.Len(t, hom, 1)
+	require.Equal(t, kitty.MorphismID("f"), hom[0])
+	hom = C.Hom("a", "a")
+	require.Len(t, hom, 1)
+	require.Equal(t, kitty.MorphismID("_id_a"), hom[0])
+	hom = C.Hom("b", "b")
+	require.Len(t, hom, 1)
+	require.Equal(t, kitty.MorphismID("_id_b"), hom[0])
+}
+
+func TestIsomorphic(t *testing.T) {
+	objects := []kitty.Object{"a", "b", "c"}
+	f := &kitty.Morphism{
+		ID:          "f",
+		Source:      "a",
+		Destination: "b",
+	}
+	morphisms := []*kitty.Morphism{
+		f, f.Inverse(),
+		{
+			ID:          "g",
+			Source:      "b",
+			Destination: "c",
+		},
+	}
+	compose := map[[2]kitty.MorphismID]kitty.MorphismID{}
+	C, err := kitty.NewCategory(objects, morphisms, compose)
+	require.NoError(t, err)
+	require.True(t, C.IsIsomorphic("a", "b"))
+	require.True(t, C.IsIsomorphic("b", "a"))
+	require.False(t, C.IsIsomorphic("b", "c"))
+	require.False(t, C.IsIsomorphic("c", "b"))
+}

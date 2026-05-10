@@ -131,9 +131,6 @@ func (c *Category) constructComposition() error {
 				case m2.IsIdentity():
 					composedID := m1.ID
 					c.composeTable[key] = composedID
-				case m1.Inverse().ID == m2.ID:
-					composedID := m1.Source.GetIdentityID()
-					c.composeTable[key] = composedID
 				default:
 					// Avoid the infinite morphism loop.
 					// e.g. m1.ID = "g_f", m2.ID = "f"
@@ -143,8 +140,30 @@ func (c *Category) constructComposition() error {
 						containsAsSubsequence(m2IDTokens, m1IDTokens) {
 						continue
 					}
-					// e.g. m1.ID = "f", m2.ID = "g" => "g_f"
-					composedID := MorphismID(fmt.Sprintf("%s_%s", m2.ID, m1.ID))
+					// Vanish the product of the pair of inverse morphisms.
+					// e.g. m1.ID = fg^{-1}", m2.ID = hgf^{-1} => m1.ID = id, m2.ID = h"
+					for len(m1IDTokens) != 0 && len(m2IDTokens) != 0 {
+						m1FirstMorphism := c.Morphisms[MorphismID(m1IDTokens[0])]
+						m2LastMorphism := c.Morphisms[MorphismID(m2IDTokens[len(m2IDTokens)-1])]
+						if m1FirstMorphism.Inverse().ID == m2LastMorphism.ID {
+							m1IDTokens = m1IDTokens[1:]
+							m2IDTokens = m2IDTokens[:len(m2IDTokens)-1]
+							continue
+						}
+						break
+					}
+					var composedID MorphismID
+					switch {
+					case len(m1IDTokens) == 0 && len(m2IDTokens) == 0:
+						composedID = m1.Source.GetIdentityID()
+					case len(m1IDTokens) == 0:
+						composedID = MorphismID(strings.Join(m2IDTokens, "_"))
+					case len(m2IDTokens) == 0:
+						composedID = MorphismID(strings.Join(m1IDTokens, "_"))
+					default:
+						composedID = MorphismID(fmt.Sprintf("%s_%s",
+							strings.Join(m2IDTokens, "_"), strings.Join(m1IDTokens, "_")))
+					}
 					c.composeTable[key] = composedID
 					toBeAddedMorphisms = append(toBeAddedMorphisms,
 						&Morphism{
@@ -222,13 +241,17 @@ func (c *Category) validate() error {
 			for h := range c.Morphisms {
 				gf, ok1 := c.Compose(f, g)
 				hg, ok2 := c.Compose(g, h)
-
 				if ok1 == nil && ok2 == nil {
-					left, err1 := c.Compose(gf, h)
-					right, err2 := c.Compose(f, hg)
-
-					if err1 == nil && err2 == nil && left != right {
-						return errors.New("associativity failed")
+					left, err := c.Compose(gf, h)
+					if err != nil {
+						continue
+					}
+					right, err := c.Compose(f, hg)
+					if err != nil {
+						continue
+					}
+					if left != right {
+						return fmt.Errorf("associativity failed: left=%s, right=%s", left, right)
 					}
 				}
 			}
@@ -246,4 +269,38 @@ func (c *Category) validate() error {
 	}
 
 	return nil
+}
+
+func (c *Category) Hom(a, b Object) []MorphismID {
+	var res []MorphismID
+
+	for id, m := range c.Morphisms {
+		if m.Source == a && m.Destination == b {
+			res = append(res, id)
+		}
+	}
+
+	return res
+}
+
+func (c *Category) IsIsomorphic(a, b Object) bool {
+	for _, f := range c.Hom(a, b) {
+		for _, g := range c.Hom(b, a) {
+			gf, err := c.Compose(f, g)
+			if err != nil {
+				continue
+			}
+			fg, err := c.Compose(g, f)
+			if err != nil {
+				continue
+			}
+
+			if gf == a.GetIdentityID() &&
+				fg == b.GetIdentityID() {
+				return true
+			}
+		}
+	}
+
+	return false
 }
