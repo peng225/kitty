@@ -17,9 +17,9 @@ func TestIdentityFunctor(t *testing.T) {
 		},
 	}
 	compose := map[[2]kitty.MorphismID]kitty.MorphismID{}
-	c1, err := kitty.NewCategory(objects, morphisms, compose)
+	C1, err := kitty.NewCategory(objects, morphisms, compose)
 	require.NoError(t, err)
-	c2 := c1
+	C2 := C1
 
 	objMap := map[kitty.Object]kitty.Object{
 		"a": "a",
@@ -28,7 +28,7 @@ func TestIdentityFunctor(t *testing.T) {
 	mMap := map[kitty.MorphismID]kitty.MorphismID{
 		"f": "f",
 	}
-	_, err = kitty.NewFunctor(c1, c2, objMap, mMap)
+	_, err = kitty.NewFunctor(C1, C2, objMap, mMap)
 	require.NoError(t, err)
 }
 
@@ -42,7 +42,7 @@ func TestSameFormFunctor(t *testing.T) {
 		},
 	}
 	compose1 := map[[2]kitty.MorphismID]kitty.MorphismID{}
-	c1, err := kitty.NewCategory(objects1, morphisms1, compose1)
+	C1, err := kitty.NewCategory(objects1, morphisms1, compose1)
 	require.NoError(t, err)
 
 	objects2 := []kitty.Object{"p", "q"}
@@ -54,7 +54,7 @@ func TestSameFormFunctor(t *testing.T) {
 		},
 	}
 	compose2 := map[[2]kitty.MorphismID]kitty.MorphismID{}
-	c2, err := kitty.NewCategory(objects2, morphisms2, compose2)
+	C2, err := kitty.NewCategory(objects2, morphisms2, compose2)
 	require.NoError(t, err)
 
 	objMap := map[kitty.Object]kitty.Object{
@@ -64,7 +64,7 @@ func TestSameFormFunctor(t *testing.T) {
 	mMap := map[kitty.MorphismID]kitty.MorphismID{
 		"f": "g",
 	}
-	F, err := kitty.NewFunctor(c1, c2, objMap, mMap)
+	F, err := kitty.NewFunctor(C1, C2, objMap, mMap)
 	require.NoError(t, err)
 	require.True(t, F.IsEquivalence())
 }
@@ -84,7 +84,7 @@ func TestDifferentFormFunctor(t *testing.T) {
 		},
 	}
 	compose1 := map[[2]kitty.MorphismID]kitty.MorphismID{}
-	c1, err := kitty.NewCategory(objects1, morphisms1, compose1)
+	C1, err := kitty.NewCategory(objects1, morphisms1, compose1)
 	require.NoError(t, err)
 
 	objects2 := []kitty.Object{"p", "q"}
@@ -96,7 +96,7 @@ func TestDifferentFormFunctor(t *testing.T) {
 		},
 	}
 	compose2 := map[[2]kitty.MorphismID]kitty.MorphismID{}
-	c2, err := kitty.NewCategory(objects2, morphisms2, compose2)
+	C2, err := kitty.NewCategory(objects2, morphisms2, compose2)
 	require.NoError(t, err)
 
 	objMap := map[kitty.Object]kitty.Object{
@@ -108,7 +108,7 @@ func TestDifferentFormFunctor(t *testing.T) {
 		"f": "h",
 		"g": kitty.Identity,
 	}
-	F, err := kitty.NewFunctor(c1, c2, objMap, mMap)
+	F, err := kitty.NewFunctor(C1, C2, objMap, mMap)
 	require.NoError(t, err)
 	require.False(t, F.IsEquivalence())
 }
@@ -133,7 +133,7 @@ func TestLongMorphismChain(t *testing.T) {
 		},
 	}
 	compose := map[[2]kitty.MorphismID]kitty.MorphismID{}
-	c, err := kitty.NewCategory(objects, morphisms, compose)
+	C, err := kitty.NewCategory(objects, morphisms, compose)
 	require.NoError(t, err)
 
 	objMap := map[kitty.Object]kitty.Object{
@@ -147,7 +147,7 @@ func TestLongMorphismChain(t *testing.T) {
 		"g": "g",
 		"h": "h",
 	}
-	_, err = kitty.NewFunctor(c, c, objMap, mMap)
+	_, err = kitty.NewFunctor(C, C, objMap, mMap)
 	require.NoError(t, err)
 }
 
@@ -227,13 +227,13 @@ func TestFunctorProperties(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			compose1 := map[[2]kitty.MorphismID]kitty.MorphismID{}
-			c1, err := kitty.NewCategory(test.objs1, test.morphisms1, compose1)
+			C1, err := kitty.NewCategory(test.objs1, test.morphisms1, compose1)
 			require.NoError(t, err)
 			compose2 := map[[2]kitty.MorphismID]kitty.MorphismID{}
-			c2, err := kitty.NewCategory(test.objs2, test.morphisms2, compose2)
+			C2, err := kitty.NewCategory(test.objs2, test.morphisms2, compose2)
 			require.NoError(t, err)
 
-			F, err := kitty.NewFunctor(c1, c2, test.objMap, test.mMap)
+			F, err := kitty.NewFunctor(C1, C2, test.objMap, test.mMap)
 			require.NoError(t, err)
 			require.Equal(t, test.isFaithful, F.IsFaithful())
 			require.Equal(t, test.isFull, F.IsFull())

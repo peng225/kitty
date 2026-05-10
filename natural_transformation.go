@@ -21,7 +21,7 @@ func NewNaturalTransformation(
 	}
 	for obj, mID := range nt.Components {
 		if mID == Identity {
-			nt.Components[obj] = f.objectMap[obj].GetIdentityID()
+			nt.Components[obj] = f.MapObject(obj).GetIdentityID()
 		}
 	}
 	err := nt.validate()
@@ -110,7 +110,7 @@ func (nt *NaturalTransformation) ApplyFunctorLeft(F *Functor) (*NaturalTransform
 	components := make(map[Object]MorphismID)
 	for obj, m := range nt.Components {
 		// The 'a' component of F◦nt is F(nt_a).
-		components[obj] = F.morphismMap[m]
+		components[obj] = F.MapMorphism(m)
 	}
 	return NewNaturalTransformation(FAndNTSource, FAndNTDestination, components)
 }
@@ -132,7 +132,7 @@ func (nt *NaturalTransformation) ApplyFunctorRight(F *Functor) (*NaturalTransfor
 	components := make(map[Object]MorphismID)
 	for obj := range F.Source.Objects {
 		// The 'a' component of nt◦F is nt_F(a).
-		imageObj := F.objectMap[obj]
+		imageObj := F.MapObject(obj)
 		components[obj] = nt.Components[imageObj]
 	}
 	return NewNaturalTransformation(NTSourceAndF, NTDestinationAndF, components)
@@ -142,7 +142,7 @@ func IdentityNaturalTransformation(F *Functor) (*NaturalTransformation, error) {
 	comp := make(map[Object]MorphismID)
 	for obj := range F.Source.Objects {
 		// The 'a' component of 1_F is 1_F(a).
-		comp[obj] = F.morphismMap[obj.GetIdentityID()]
+		comp[obj] = F.MapMorphism(obj.GetIdentityID())
 	}
 	nt, err := NewNaturalTransformation(F, F, comp)
 	if err != nil {
