@@ -198,3 +198,28 @@ func TestMorphismLoop(t *testing.T) {
 	_, err := kitty.NewCategory(objects, morphisms, compose)
 	require.NoError(t, err)
 }
+
+func TestComplicatedInverseChain(t *testing.T) {
+	objects := []kitty.Object{"a", "b", "c"}
+	f := &kitty.Morphism{
+		ID:          "f",
+		Source:      "a",
+		Destination: "b",
+	}
+	g := &kitty.Morphism{
+		ID:          "g",
+		Source:      "b",
+		Destination: "a",
+	}
+	morphisms := []*kitty.Morphism{
+		f, f.Inverse(), g, g.Inverse(),
+		{
+			ID:          "h",
+			Source:      "a",
+			Destination: "c",
+		},
+	}
+	compose := map[[2]kitty.MorphismID]kitty.MorphismID{}
+	_, err := kitty.NewCategory(objects, morphisms, compose)
+	require.NoError(t, err)
+}
