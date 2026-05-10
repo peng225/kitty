@@ -14,118 +14,118 @@ type Functor struct {
 func NewFunctor(
 	src, dst *Category, objectMap map[Object]Object, morphismMap map[MorphismID]MorphismID,
 ) (*Functor, error) {
-	f := &Functor{
+	F := &Functor{
 		Source:      src,
 		Destination: dst,
 		objectMap:   objectMap,
 		morphismMap: morphismMap,
 	}
-	for srcObj, dstObj := range f.objectMap {
-		f.morphismMap[srcObj.GetIdentityID()] = dstObj.GetIdentityID()
+	for srcObj, dstObj := range F.objectMap {
+		F.morphismMap[srcObj.GetIdentityID()] = dstObj.GetIdentityID()
 	}
-	for k, v := range f.morphismMap {
+	for k, v := range F.morphismMap {
 		if v == Identity {
-			srcObj := f.Source.Morphisms[k].Source
-			mappedSrcObj := f.objectMap[srcObj]
+			srcObj := F.Source.Morphisms[k].Source
+			mappedSrcObj := F.objectMap[srcObj]
 			// Here, we proceed under the assumption that F[srcObj] == F[dstObj].
-			f.morphismMap[k] = mappedSrcObj.GetIdentityID()
+			F.morphismMap[k] = mappedSrcObj.GetIdentityID()
 		}
 	}
-	err := f.constructComposition()
+	err := F.constructComposition()
 	if err != nil {
 		return nil, err
 	}
-	err = f.validate()
+	err = F.validate()
 	if err != nil {
 		return nil, err
 	}
-	return f, nil
+	return F, nil
 }
 
-func (f *Functor) constructComposition() error {
-	previousMMapCount := len(f.morphismMap)
-	for len(f.morphismMap) != len(f.Source.Morphisms) {
-		for _, m1 := range f.Source.Morphisms {
-			for _, m2 := range f.Source.Morphisms {
+func (F *Functor) constructComposition() error {
+	previousMMapCount := len(F.morphismMap)
+	for len(F.morphismMap) != len(F.Source.Morphisms) {
+		for _, m1 := range F.Source.Morphisms {
+			for _, m2 := range F.Source.Morphisms {
 				if m1.ID == m2.ID {
 					continue
 				}
-				composed, err := f.Source.Compose(m1.ID, m2.ID)
+				composed, err := F.Source.Compose(m1.ID, m2.ID)
 				if err != nil {
 					// FIXME: should define the composition not found error.
 					continue
 				}
-				if _, ok := f.morphismMap[m1.ID]; !ok {
+				if _, ok := F.morphismMap[m1.ID]; !ok {
 					continue
 				}
-				if _, ok := f.morphismMap[m2.ID]; !ok {
+				if _, ok := F.morphismMap[m2.ID]; !ok {
 					continue
 				}
-				fm1CircFm2, err := f.Destination.Compose(f.morphismMap[m1.ID], f.morphismMap[m2.ID])
+				fm1CircFm2, err := F.Destination.Compose(F.morphismMap[m1.ID], F.morphismMap[m2.ID])
 				if err != nil {
 					return fmt.Errorf("failed to construct composition: %w", err)
 				}
-				f.morphismMap[composed] = fm1CircFm2
+				F.morphismMap[composed] = fm1CircFm2
 			}
 		}
-		if previousMMapCount == len(f.morphismMap) {
+		if previousMMapCount == len(F.morphismMap) {
 			return fmt.Errorf("composition construction stuck detected")
 		}
-		previousMMapCount = len(f.morphismMap)
+		previousMMapCount = len(F.morphismMap)
 	}
 	return nil
 }
 
-func (f *Functor) validate() error {
+func (F *Functor) validate() error {
 	// Type preservation
-	for id, m := range f.Source.Morphisms {
-		fm, ok := f.Destination.Morphisms[f.morphismMap[id]]
+	for id, m := range F.Source.Morphisms {
+		Fm, ok := F.Destination.Morphisms[F.morphismMap[id]]
 		if !ok {
 			return fmt.Errorf("the destination of %s is not defined", id)
 		}
 
-		if fm.Source != f.objectMap[m.Source] {
+		if Fm.Source != F.objectMap[m.Source] {
 			return fmt.Errorf("source type mismatch: src=%s, F(src)=%s",
-				fm.Source, f.objectMap[m.Source])
+				Fm.Source, F.objectMap[m.Source])
 		}
-		if fm.Source != f.objectMap[m.Source] ||
-			fm.Destination != f.objectMap[m.Destination] {
+		if Fm.Source != F.objectMap[m.Source] ||
+			Fm.Destination != F.objectMap[m.Destination] {
 			return fmt.Errorf("destination type mismatch: dst=%s, F(dst)=%s",
-				fm.Destination, f.objectMap[m.Destination])
+				Fm.Destination, F.objectMap[m.Destination])
 		}
 	}
 
 	// Identities
-	for _, m := range f.Source.Morphisms {
+	for _, m := range F.Source.Morphisms {
 		if !m.IsIdentity() {
 			continue
 		}
-		if !f.Destination.Morphisms[f.morphismMap[m.ID]].IsIdentity() {
+		if !F.Destination.Morphisms[F.morphismMap[m.ID]].IsIdentity() {
 			return fmt.Errorf("identity not preserved: src morphism=%s, dst morphism=%s",
-				m.ID, f.morphismMap[m.ID])
+				m.ID, F.morphismMap[m.ID])
 		}
 	}
 
 	// Composition preservation
-	for _, f1 := range f.Source.Morphisms {
-		for _, f2 := range f.Source.Morphisms {
+	for _, f1 := range F.Source.Morphisms {
+		for _, f2 := range F.Source.Morphisms {
 			// Check if f2◦f1 is a valid morphism.
 			if f1.Destination != f2.Source {
 				continue
 			}
-			sourceComp, err := f.Source.Compose(f1.ID, f2.ID)
+			sourceComp, err := F.Source.Compose(f1.ID, f2.ID)
 			if err != nil {
 				return err
 			}
 
-			Ff1 := f.morphismMap[f1.ID]
-			Ff2 := f.morphismMap[f2.ID]
-			destComp, err := f.Destination.Compose(Ff1, Ff2)
+			Ff1 := F.morphismMap[f1.ID]
+			Ff2 := F.morphismMap[f2.ID]
+			destComp, err := F.Destination.Compose(Ff1, Ff2)
 			if err != nil {
 				return err
 			}
 
-			if f.morphismMap[sourceComp] != destComp {
+			if F.morphismMap[sourceComp] != destComp {
 				return fmt.Errorf("composition not preserved: sourceComp=%s, destComp=%s",
 					sourceComp, destComp)
 			}
@@ -135,29 +135,29 @@ func (f *Functor) validate() error {
 	return nil
 }
 
-func (f *Functor) MapMorphism(m MorphismID) MorphismID {
-	return f.morphismMap[m]
+func (F *Functor) MapMorphism(m MorphismID) MorphismID {
+	return F.morphismMap[m]
 }
 
-func (f *Functor) ComposeWith(g *Functor) (*Functor, error) {
+func (F *Functor) ComposeWith(G *Functor) (*Functor, error) {
 	// If F: A→B and G: B→C, then G∘F: A→C
 	objMap := make(map[Object]Object)
 	mMap := make(map[MorphismID]MorphismID)
-	for obj := range f.Source.Objects {
-		objMap[obj] = g.objectMap[f.objectMap[obj]]
+	for obj := range F.Source.Objects {
+		objMap[obj] = G.objectMap[F.objectMap[obj]]
 	}
-	for m := range f.Source.Morphisms {
-		mMap[m] = g.morphismMap[f.morphismMap[m]]
+	for m := range F.Source.Morphisms {
+		mMap[m] = G.morphismMap[F.morphismMap[m]]
 	}
 
-	h, err := NewFunctor(
-		f.Source, g.Destination, objMap, mMap,
+	H, err := NewFunctor(
+		F.Source, G.Destination, objMap, mMap,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return h, nil
+	return H, nil
 }
 
 func IdentityFunctor(c *Category) (*Functor, error) {
@@ -169,10 +169,10 @@ func IdentityFunctor(c *Category) (*Functor, error) {
 	for m := range c.Morphisms {
 		mMap[m] = m
 	}
-	f, err := NewFunctor(c, c, objMap, mMap)
+	F, err := NewFunctor(c, c, objMap, mMap)
 	if err != nil {
 		return nil, err
 	}
 
-	return f, nil
+	return F, nil
 }
