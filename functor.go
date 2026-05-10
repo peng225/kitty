@@ -176,3 +176,65 @@ func IdentityFunctor(c *Category) (*Functor, error) {
 
 	return F, nil
 }
+
+func (F *Functor) IsFaithful() bool {
+	C := F.Source
+	for a := range C.Objects {
+		for b := range C.Objects {
+			seen := map[MorphismID]bool{}
+			for _, f := range C.Hom(a, b) {
+				image := F.morphismMap[f]
+				if seen[image] {
+					return false
+				}
+				seen[image] = true
+			}
+		}
+	}
+	return true
+}
+
+func (F *Functor) IsFull() bool {
+	C := F.Source
+	D := F.Destination
+	for a := range C.Objects {
+		for b := range C.Objects {
+			targetHom := D.Hom(
+				F.objectMap[a],
+				F.objectMap[b],
+			)
+			image := map[MorphismID]bool{}
+			for _, f := range C.Hom(a, b) {
+				image[F.morphismMap[f]] = true
+			}
+			for _, g := range targetHom {
+				if !image[g] {
+					return false
+				}
+			}
+		}
+	}
+	return true
+}
+
+func (F *Functor) IsEssentiallySurjective() bool {
+	D := F.Destination
+	for x := range D.Objects {
+		found := false
+		for a := range F.Source.Objects {
+			if D.IsIsomorphic(F.objectMap[a], x) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
+}
+
+func (F *Functor) IsEquivalence() bool {
+	return F.IsFaithful() && F.IsFull() &&
+		F.IsEssentiallySurjective()
+}
