@@ -140,7 +140,7 @@ func (c *Category) constructComposition() error {
 						containsAsSubsequence(m2IDTokens, m1IDTokens) {
 						continue
 					}
-					// Vanish the product of the pair of inverse morphisms.
+					// Eliminate the adjacent pair of inverse morphisms.
 					// e.g. m1.ID = fg^{-1}", m2.ID = hgf^{-1} => m1.ID = id, m2.ID = h"
 					for len(m1IDTokens) != 0 && len(m2IDTokens) != 0 {
 						m1FirstMorphism := c.Morphisms[MorphismID(m1IDTokens[0])]
