@@ -270,3 +270,37 @@ func (c *Category) validate() error {
 
 	return nil
 }
+
+func (c *Category) Hom(a, b Object) []MorphismID {
+	var res []MorphismID
+
+	for id, m := range c.Morphisms {
+		if m.Source == a && m.Destination == b {
+			res = append(res, id)
+		}
+	}
+
+	return res
+}
+
+func (c *Category) IsIsomorphic(a, b Object) bool {
+	for _, f := range c.Hom(a, b) {
+		for _, g := range c.Hom(b, a) {
+			gf, err := c.Compose(f, g)
+			if err != nil {
+				continue
+			}
+			fg, err := c.Compose(g, f)
+			if err != nil {
+				continue
+			}
+
+			if gf == a.GetIdentityID() &&
+				fg == b.GetIdentityID() {
+				return true
+			}
+		}
+	}
+
+	return false
+}
