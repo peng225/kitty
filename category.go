@@ -57,7 +57,7 @@ func NewCategory(
 	for _, o := range objs {
 		objects[o] = struct{}{}
 	}
-	c := &Category{
+	C := &Category{
 		Objects:      objects,
 		Morphisms:    make(map[MorphismID]*Morphism),
 		composeTable: compose,
@@ -67,70 +67,70 @@ func NewCategory(
 		if strings.Contains(string(m.ID), "_") {
 			return nil, errors.New("Morphism names with '_' cannot be used")
 		}
-		c.Morphisms[m.ID] = m
+		C.Morphisms[m.ID] = m
 	}
 
-	for o := range c.Objects {
+	for o := range C.Objects {
 		id := o.GetIdentityID()
 		m := &Morphism{
 			ID:          id,
 			Source:      o,
 			Destination: o,
 		}
-		c.Morphisms[m.ID] = m
+		C.Morphisms[m.ID] = m
 	}
 
-	processedCompose := c.composeTable
+	processedCompose := C.composeTable
 	for k, v := range compose {
 		if v == Identity {
 			// Since k[1]◦k[0] is identity, its object should be the destination of k[1].
-			processedCompose[k] = c.Morphisms[k[1]].Destination.GetIdentityID()
+			processedCompose[k] = C.Morphisms[k[1]].Destination.GetIdentityID()
 		}
 	}
 
-	for k, v := range c.composeTable {
+	for k, v := range C.composeTable {
 		for _, w := range []MorphismID{k[0], k[1], v} {
-			if _, ok := c.Morphisms[w]; !ok {
+			if _, ok := C.Morphisms[w]; !ok {
 				return nil, fmt.Errorf("unknown morphism found in the composition definition: %s", w)
 			}
 		}
 	}
 
-	err := c.constructComposition()
+	err := C.constructComposition()
 	if err != nil {
 		return nil, err
 	}
 
-	if err := c.validate(); err != nil {
+	if err := C.validate(); err != nil {
 		return nil, err
 	}
 
-	return c, nil
+	return C, nil
 }
 
-func (c *Category) constructComposition() error {
-	initialMorphismCount := len(c.Morphisms)
-	previousCTableCount := len(c.composeTable)
-	for len(c.Morphisms) < initialMorphismCount*initialMorphismCount {
+func (C *Category) constructComposition() error {
+	initialMorphismCount := len(C.Morphisms)
+	previousCTableCount := len(C.composeTable)
+	for len(C.Morphisms) < initialMorphismCount*initialMorphismCount {
 		toBeAddedMorphisms := make([]*Morphism, 0)
-		for _, m1 := range c.Morphisms {
-			for _, m2 := range c.Morphisms {
+		for _, m1 := range C.Morphisms {
+			for _, m2 := range C.Morphisms {
 				if m1.Destination != m2.Source {
 					continue
 				}
 
 				key := [2]MorphismID{m1.ID, m2.ID}
-				if _, ok := c.composeTable[key]; ok {
+				if _, ok := C.composeTable[key]; ok {
 					continue
 				}
 				switch {
 				case m1.IsIdentity():
 					// This case contains (m1.ID, m2.ID) = (identity, identity).
 					composedID := m2.ID
-					c.composeTable[key] = composedID
+					C.composeTable[key] = composedID
 				case m2.IsIdentity():
 					composedID := m1.ID
-					c.composeTable[key] = composedID
+					C.composeTable[key] = composedID
 				default:
 					// Avoid the infinite morphism loop.
 					// e.g. m1.ID = "g_f", m2.ID = "f"
@@ -143,8 +143,8 @@ func (c *Category) constructComposition() error {
 					// Eliminate the adjacent pair of inverse morphisms.
 					// e.g. m1.ID = fg^{-1}", m2.ID = hgf^{-1} => m1.ID = id, m2.ID = h"
 					for len(m1IDTokens) != 0 && len(m2IDTokens) != 0 {
-						m1FirstMorphism := c.Morphisms[MorphismID(m1IDTokens[0])]
-						m2LastMorphism := c.Morphisms[MorphismID(m2IDTokens[len(m2IDTokens)-1])]
+						m1FirstMorphism := C.Morphisms[MorphismID(m1IDTokens[0])]
+						m2LastMorphism := C.Morphisms[MorphismID(m2IDTokens[len(m2IDTokens)-1])]
 						if m1FirstMorphism.Inverse().ID == m2LastMorphism.ID {
 							m1IDTokens = m1IDTokens[1:]
 							m2IDTokens = m2IDTokens[:len(m2IDTokens)-1]
@@ -164,7 +164,7 @@ func (c *Category) constructComposition() error {
 						composedID = MorphismID(fmt.Sprintf("%s_%s",
 							strings.Join(m2IDTokens, "_"), strings.Join(m1IDTokens, "_")))
 					}
-					c.composeTable[key] = composedID
+					C.composeTable[key] = composedID
 					toBeAddedMorphisms = append(toBeAddedMorphisms,
 						&Morphism{
 							ID:          composedID,
@@ -176,19 +176,19 @@ func (c *Category) constructComposition() error {
 			}
 		}
 		for _, m := range toBeAddedMorphisms {
-			c.Morphisms[m.ID] = m
+			C.Morphisms[m.ID] = m
 		}
-		if previousCTableCount == len(c.composeTable) {
+		if previousCTableCount == len(C.composeTable) {
 			return nil
 		}
-		previousCTableCount = len(c.composeTable)
+		previousCTableCount = len(C.composeTable)
 	}
 	return errors.New("composition construction stuck detected")
 }
 
-func (c *Category) Compose(f, g MorphismID) (MorphismID, error) {
+func (C *Category) Compose(f, g MorphismID) (MorphismID, error) {
 	key := [2]MorphismID{f, g}
-	res, ok := c.composeTable[key]
+	res, ok := C.composeTable[key]
 	if !ok {
 		return "", fmt.Errorf("composition not defined for %s and %s",
 			f, g)
@@ -211,15 +211,15 @@ func containsAsSubsequence(tokens, subTokens []string) bool {
 	return slices.Compare(partialTokens, subTokens) == 0
 }
 
-func (c *Category) validate() error {
+func (C *Category) validate() error {
 	// Type check
-	for key, res := range c.composeTable {
-		f, ok := c.Morphisms[key[0]]
+	for key, res := range C.composeTable {
+		f, ok := C.Morphisms[key[0]]
 		if !ok {
 			return fmt.Errorf("invalid morphism %s found in the composition rule",
 				key[0])
 		}
-		g, ok := c.Morphisms[key[1]]
+		g, ok := C.Morphisms[key[1]]
 		if !ok {
 			return fmt.Errorf("invalid morphism %s found in the composition rule",
 				key[1])
@@ -229,24 +229,24 @@ func (c *Category) validate() error {
 			return errors.New("invalid composition domain")
 		}
 
-		r := c.Morphisms[res]
+		r := C.Morphisms[res]
 		if r.Source != f.Source || r.Destination != g.Destination {
 			return errors.New("composition result mismatch")
 		}
 	}
 
 	// Associative law
-	for f := range c.Morphisms {
-		for g := range c.Morphisms {
-			for h := range c.Morphisms {
-				gf, ok1 := c.Compose(f, g)
-				hg, ok2 := c.Compose(g, h)
+	for f := range C.Morphisms {
+		for g := range C.Morphisms {
+			for h := range C.Morphisms {
+				gf, ok1 := C.Compose(f, g)
+				hg, ok2 := C.Compose(g, h)
 				if ok1 == nil && ok2 == nil {
-					left, err := c.Compose(gf, h)
+					left, err := C.Compose(gf, h)
 					if err != nil {
 						continue
 					}
-					right, err := c.Compose(f, hg)
+					right, err := C.Compose(f, hg)
 					if err != nil {
 						continue
 					}
@@ -259,11 +259,11 @@ func (c *Category) validate() error {
 	}
 
 	// Invalid source or destination
-	for _, m := range c.Morphisms {
-		if _, ok := c.Objects[m.Source]; !ok {
+	for _, m := range C.Morphisms {
+		if _, ok := C.Objects[m.Source]; !ok {
 			return fmt.Errorf("%s has an invalid source: %s", m.ID, m.Source)
 		}
-		if _, ok := c.Objects[m.Destination]; !ok {
+		if _, ok := C.Objects[m.Destination]; !ok {
 			return fmt.Errorf("%s has an invalid destination: %s", m.ID, m.Destination)
 		}
 	}
@@ -271,10 +271,10 @@ func (c *Category) validate() error {
 	return nil
 }
 
-func (c *Category) Hom(a, b Object) []MorphismID {
+func (C *Category) Hom(a, b Object) []MorphismID {
 	var res []MorphismID
 
-	for id, m := range c.Morphisms {
+	for id, m := range C.Morphisms {
 		if m.Source == a && m.Destination == b {
 			res = append(res, id)
 		}
@@ -283,14 +283,14 @@ func (c *Category) Hom(a, b Object) []MorphismID {
 	return res
 }
 
-func (c *Category) IsIsomorphic(a, b Object) bool {
-	for _, f := range c.Hom(a, b) {
-		for _, g := range c.Hom(b, a) {
-			gf, err := c.Compose(f, g)
+func (C *Category) IsIsomorphic(a, b Object) bool {
+	for _, f := range C.Hom(a, b) {
+		for _, g := range C.Hom(b, a) {
+			gf, err := C.Compose(f, g)
 			if err != nil {
 				continue
 			}
-			fg, err := c.Compose(g, f)
+			fg, err := C.Compose(g, f)
 			if err != nil {
 				continue
 			}

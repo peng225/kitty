@@ -13,7 +13,7 @@ func TestTrivialAdjunction(t *testing.T) {
 		{"f", "a", "b"},
 	}
 	compose := map[[2]kitty.MorphismID]kitty.MorphismID{}
-	c, err := kitty.NewCategory(objects, morphisms, compose)
+	C, err := kitty.NewCategory(objects, morphisms, compose)
 	require.NoError(t, err)
 
 	objMap := map[kitty.Object]kitty.Object{
@@ -23,7 +23,7 @@ func TestTrivialAdjunction(t *testing.T) {
 	mMap := map[kitty.MorphismID]kitty.MorphismID{
 		"f": "f",
 	}
-	F, err := kitty.NewFunctor(c, c, objMap, mMap)
+	F, err := kitty.NewFunctor(C, C, objMap, mMap)
 	require.NoError(t, err)
 
 	G := F
@@ -64,7 +64,7 @@ func TestNonTrivialAdjunction(t *testing.T) {
 		},
 	}
 	compose1 := map[[2]kitty.MorphismID]kitty.MorphismID{}
-	c1, err := kitty.NewCategory(objects1, morphisms1, compose1)
+	C1, err := kitty.NewCategory(objects1, morphisms1, compose1)
 	require.NoError(t, err)
 
 	objects2 := []kitty.Object{"x", "y"}
@@ -76,7 +76,7 @@ func TestNonTrivialAdjunction(t *testing.T) {
 		},
 	}
 	compose2 := map[[2]kitty.MorphismID]kitty.MorphismID{}
-	c2, err := kitty.NewCategory(objects2, morphisms2, compose2)
+	C2, err := kitty.NewCategory(objects2, morphisms2, compose2)
 	require.NoError(t, err)
 
 	objMap1 := map[kitty.Object]kitty.Object{
@@ -88,7 +88,7 @@ func TestNonTrivialAdjunction(t *testing.T) {
 		"f": kitty.Identity,
 		"g": "p",
 	}
-	F, err := kitty.NewFunctor(c1, c2, objMap1, mMap1)
+	F, err := kitty.NewFunctor(C1, C2, objMap1, mMap1)
 	require.NoError(t, err)
 
 	objMap2 := map[kitty.Object]kitty.Object{
@@ -98,7 +98,7 @@ func TestNonTrivialAdjunction(t *testing.T) {
 	mMap2 := map[kitty.MorphismID]kitty.MorphismID{
 		"p": "g",
 	}
-	G, err := kitty.NewFunctor(c2, c1, objMap2, mMap2)
+	G, err := kitty.NewFunctor(C2, C1, objMap2, mMap2)
 	require.NoError(t, err)
 
 	GF, err := F.ComposeWith(G)
@@ -146,7 +146,7 @@ func TestNotAdjunction(t *testing.T) {
 		{"f", "f"}: kitty.Identity,
 		{"g", "g"}: kitty.Identity,
 	}
-	c1, err := kitty.NewCategory(objects1, morphisms1, compose1)
+	C1, err := kitty.NewCategory(objects1, morphisms1, compose1)
 	require.NoError(t, err)
 
 	objects2 := []kitty.Object{"x", "y"}
@@ -166,7 +166,7 @@ func TestNotAdjunction(t *testing.T) {
 		{"p", "p"}: kitty.Identity,
 		{"q", "q"}: kitty.Identity,
 	}
-	c2, err := kitty.NewCategory(objects2, morphisms2, compose2)
+	C2, err := kitty.NewCategory(objects2, morphisms2, compose2)
 	require.NoError(t, err)
 
 	objMap1 := map[kitty.Object]kitty.Object{
@@ -177,7 +177,7 @@ func TestNotAdjunction(t *testing.T) {
 		"f": "q",
 		"g": "p",
 	}
-	F, err := kitty.NewFunctor(c1, c2, objMap1, mMap1)
+	F, err := kitty.NewFunctor(C1, C2, objMap1, mMap1)
 	require.NoError(t, err)
 
 	objMap2 := map[kitty.Object]kitty.Object{
@@ -188,7 +188,7 @@ func TestNotAdjunction(t *testing.T) {
 		"p": "g",
 		"q": "f",
 	}
-	G, err := kitty.NewFunctor(c2, c1, objMap2, mMap2)
+	G, err := kitty.NewFunctor(C2, C1, objMap2, mMap2)
 	require.NoError(t, err)
 
 	GF, err := F.ComposeWith(G)

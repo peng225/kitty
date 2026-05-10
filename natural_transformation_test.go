@@ -13,7 +13,7 @@ func TestTrivialNaturalTransformation(t *testing.T) {
 		{"f", "a", "b"},
 	}
 	compose := map[[2]kitty.MorphismID]kitty.MorphismID{}
-	c, err := kitty.NewCategory(objects, morphisms, compose)
+	C, err := kitty.NewCategory(objects, morphisms, compose)
 	require.NoError(t, err)
 
 	objMap := map[kitty.Object]kitty.Object{
@@ -23,14 +23,14 @@ func TestTrivialNaturalTransformation(t *testing.T) {
 	mMap := map[kitty.MorphismID]kitty.MorphismID{
 		"f": "f",
 	}
-	f, err := kitty.NewFunctor(c, c, objMap, mMap)
+	F, err := kitty.NewFunctor(C, C, objMap, mMap)
 	require.NoError(t, err)
 
 	comp := map[kitty.Object]kitty.MorphismID{
 		"a": kitty.Identity,
 		"b": kitty.Identity,
 	}
-	_, err = kitty.NewNaturalTransformation(f, f, comp)
+	_, err = kitty.NewNaturalTransformation(F, F, comp)
 	require.NoError(t, err)
 }
 
@@ -41,7 +41,7 @@ func TestDifferentFunctorNaturalTransformation(t *testing.T) {
 		{"g", "b", "c"},
 	}
 	compose1 := map[[2]kitty.MorphismID]kitty.MorphismID{}
-	c1, err := kitty.NewCategory(objects1, morphisms1, compose1)
+	C1, err := kitty.NewCategory(objects1, morphisms1, compose1)
 	require.NoError(t, err)
 
 	objects2 := []kitty.Object{"a", "b"}
@@ -55,7 +55,7 @@ func TestDifferentFunctorNaturalTransformation(t *testing.T) {
 		p.Inverse(),
 	}
 	compose2 := map[[2]kitty.MorphismID]kitty.MorphismID{}
-	c2, err := kitty.NewCategory(objects2, morphisms2, compose2)
+	C2, err := kitty.NewCategory(objects2, morphisms2, compose2)
 	require.NoError(t, err)
 
 	objMap1 := map[kitty.Object]kitty.Object{
@@ -67,7 +67,7 @@ func TestDifferentFunctorNaturalTransformation(t *testing.T) {
 		"f": "p",
 		"g": kitty.Identity,
 	}
-	f, err := kitty.NewFunctor(c1, c2, objMap1, mMap1)
+	F, err := kitty.NewFunctor(C1, C2, objMap1, mMap1)
 	require.NoError(t, err)
 
 	objMap2 := map[kitty.Object]kitty.Object{
@@ -79,7 +79,7 @@ func TestDifferentFunctorNaturalTransformation(t *testing.T) {
 		"f": kitty.Identity,
 		"g": "p",
 	}
-	g, err := kitty.NewFunctor(c1, c2, objMap2, mMap2)
+	G, err := kitty.NewFunctor(C1, C2, objMap2, mMap2)
 	require.NoError(t, err)
 
 	comp := map[kitty.Object]kitty.MorphismID{
@@ -87,6 +87,6 @@ func TestDifferentFunctorNaturalTransformation(t *testing.T) {
 		"b": p.Inverse().ID,
 		"c": kitty.Identity,
 	}
-	_, err = kitty.NewNaturalTransformation(f, g, comp)
+	_, err = kitty.NewNaturalTransformation(F, G, comp)
 	require.NoError(t, err)
 }
