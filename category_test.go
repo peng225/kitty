@@ -271,3 +271,37 @@ func TestIsomorphic(t *testing.T) {
 	require.False(t, C.IsIsomorphic("b", "c"))
 	require.False(t, C.IsIsomorphic("c", "b"))
 }
+
+func TestOpposite(t *testing.T) {
+	objects := []kitty.Object{"a", "b", "c"}
+	f := &kitty.Morphism{
+		ID:          "f",
+		Source:      "a",
+		Destination: "b",
+	}
+	g := &kitty.Morphism{
+		ID:          "g",
+		Source:      "b",
+		Destination: "c",
+	}
+	morphisms := []*kitty.Morphism{
+		f, g,
+	}
+	compose := map[[2]kitty.MorphismID]kitty.MorphismID{}
+	C, err := kitty.NewCategory(objects, morphisms, compose)
+	require.NoError(t, err)
+	D, err := C.Opposite()
+	require.NoError(t, err)
+	_, ok := D.Objects["a"]
+	require.True(t, ok)
+	_, ok = D.Objects["b"]
+	require.True(t, ok)
+	fop, ok := D.Morphisms["f"]
+	require.True(t, ok)
+	require.Equal(t, kitty.Object("b"), fop.Source)
+	require.Equal(t, kitty.Object("a"), fop.Destination)
+	gop, ok := D.Morphisms["g"]
+	require.True(t, ok)
+	require.Equal(t, kitty.Object("c"), gop.Source)
+	require.Equal(t, kitty.Object("b"), gop.Destination)
+}

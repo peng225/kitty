@@ -3,6 +3,7 @@ package kitty
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 )
@@ -303,4 +304,36 @@ func (C *Category) IsIsomorphic(a, b Object) bool {
 	}
 
 	return false
+}
+
+func (C *Category) Opposite() (*Category, error) {
+	objects := maps.Clone(C.Objects)
+
+	morphisms := map[MorphismID]*Morphism{}
+	for id, m := range C.Morphisms {
+		morphisms[id] = &Morphism{
+			ID:          id,
+			Source:      m.Destination,
+			Destination: m.Source,
+		}
+	}
+
+	compose := map[[2]MorphismID]MorphismID{}
+	for k, v := range C.composeTable {
+		f := k[0]
+		g := k[1]
+		compose[[2]MorphismID{g, f}] = v
+	}
+
+	D := &Category{
+		Objects:      objects,
+		Morphisms:    morphisms,
+		composeTable: compose,
+	}
+	err := D.validate()
+	if err != nil {
+		return nil, err
+	}
+
+	return D, nil
 }
