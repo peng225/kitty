@@ -1,7 +1,6 @@
 package kitty
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -58,7 +57,7 @@ func (nt *NaturalTransformation) validate() error {
 			return err
 		}
 		if left != right {
-			return errors.New("naturality failed")
+			return fmt.Errorf("naturality failed: left=%s, right=%s", left, right)
 		}
 	}
 	return nil
@@ -150,4 +149,15 @@ func IdentityNaturalTransformation(F *Functor) (*NaturalTransformation, error) {
 	}
 
 	return nt, nil
+}
+
+func (nt *NaturalTransformation) IsIsomorphic() bool {
+	for _, mID := range nt.Components {
+		C := nt.Destination.Destination
+		m := C.Morphisms[mID]
+		if !C.IsIsomorphic(m.Source, m.Destination) {
+			return false
+		}
+	}
+	return true
 }
