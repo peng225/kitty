@@ -30,8 +30,9 @@ func TestTrivialNaturalTransformation(t *testing.T) {
 		"a": kitty.Identity,
 		"b": kitty.Identity,
 	}
-	_, err = kitty.NewNaturalTransformation(F, F, comp)
+	nt, err := kitty.NewNaturalTransformation(F, F, comp)
 	require.NoError(t, err)
+	require.True(t, nt.IsIsomorphic())
 }
 
 func TestDifferentFunctorNaturalTransformation(t *testing.T) {
@@ -44,11 +45,11 @@ func TestDifferentFunctorNaturalTransformation(t *testing.T) {
 	C1, err := kitty.NewCategory(objects1, morphisms1, compose1)
 	require.NoError(t, err)
 
-	objects2 := []kitty.Object{"a", "b"}
+	objects2 := []kitty.Object{"x", "y"}
 	p := &kitty.Morphism{
 		ID:          "p",
-		Source:      "a",
-		Destination: "b",
+		Source:      "x",
+		Destination: "y",
 	}
 	morphisms2 := []*kitty.Morphism{
 		p,
@@ -59,9 +60,9 @@ func TestDifferentFunctorNaturalTransformation(t *testing.T) {
 	require.NoError(t, err)
 
 	objMap1 := map[kitty.Object]kitty.Object{
-		"a": "a",
-		"b": "b",
-		"c": "b",
+		"a": "x",
+		"b": "y",
+		"c": "y",
 	}
 	mMap1 := map[kitty.MorphismID]kitty.MorphismID{
 		"f": "p",
@@ -71,9 +72,9 @@ func TestDifferentFunctorNaturalTransformation(t *testing.T) {
 	require.NoError(t, err)
 
 	objMap2 := map[kitty.Object]kitty.Object{
-		"a": "a",
-		"b": "a",
-		"c": "b",
+		"a": "x",
+		"b": "x",
+		"c": "y",
 	}
 	mMap2 := map[kitty.MorphismID]kitty.MorphismID{
 		"f": kitty.Identity,
@@ -87,6 +88,69 @@ func TestDifferentFunctorNaturalTransformation(t *testing.T) {
 		"b": p.Inverse().ID,
 		"c": kitty.Identity,
 	}
-	_, err = kitty.NewNaturalTransformation(F, G, comp)
+	nt, err := kitty.NewNaturalTransformation(F, G, comp)
 	require.NoError(t, err)
+	require.True(t, nt.IsIsomorphic())
+}
+
+func TestNotNaturallyIsomorphic(t *testing.T) {
+	objects1 := []kitty.Object{"a", "b"}
+	morphisms1 := []*kitty.Morphism{
+		{"f", "a", "b"},
+	}
+	compose1 := map[[2]kitty.MorphismID]kitty.MorphismID{}
+	C1, err := kitty.NewCategory(objects1, morphisms1, compose1)
+	require.NoError(t, err)
+
+	objects2 := []kitty.Object{"x", "y", "z"}
+	morphisms2 := []*kitty.Morphism{
+		{
+			ID:          "p",
+			Source:      "x",
+			Destination: "y",
+		},
+		{
+			ID:          "q",
+			Source:      "x",
+			Destination: "z",
+		},
+		{
+			ID:          "r",
+			Source:      "y",
+			Destination: "z",
+		},
+	}
+	compose2 := map[[2]kitty.MorphismID]kitty.MorphismID{
+		{"p", "r"}: "q",
+	}
+	C2, err := kitty.NewCategory(objects2, morphisms2, compose2)
+	require.NoError(t, err)
+
+	objMap1 := map[kitty.Object]kitty.Object{
+		"a": "x",
+		"b": "y",
+	}
+	mMap1 := map[kitty.MorphismID]kitty.MorphismID{
+		"f": "p",
+	}
+	F, err := kitty.NewFunctor(C1, C2, objMap1, mMap1)
+	require.NoError(t, err)
+
+	objMap2 := map[kitty.Object]kitty.Object{
+		"a": "x",
+		"b": "z",
+	}
+	mMap2 := map[kitty.MorphismID]kitty.MorphismID{
+		"f": "q",
+	}
+	G, err := kitty.NewFunctor(C1, C2, objMap2, mMap2)
+	require.NoError(t, err)
+
+	comp := map[kitty.Object]kitty.MorphismID{
+		"a": kitty.Identity,
+		"b": "r",
+	}
+	nt, err := kitty.NewNaturalTransformation(F, G, comp)
+	require.NoError(t, err)
+	require.False(t, nt.IsIsomorphic())
 }
