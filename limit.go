@@ -1,6 +1,9 @@
 package kitty
 
-import "fmt"
+import (
+	"fmt"
+	"maps"
+)
 
 type Cone struct {
 	// shape -> C
@@ -77,4 +80,132 @@ func (c *Cone) validate() error {
 	}
 
 	return nil
+}
+
+func EnumerateCones(Diagram *Functor) []*Cone {
+	shape := Diagram.Source
+	C := Diagram.Destination
+
+	var result []*Cone
+
+	objects := make([]Object, 0, len(shape.Objects))
+	for obj := range shape.Objects {
+		objects = append(objects, obj)
+	}
+
+	var search func(
+		int,
+		Object,
+		map[Object]MorphismID,
+	) error
+
+	search = func(
+		i int,
+		vertex Object,
+		components map[Object]MorphismID,
+	) error {
+		if i == len(objects) {
+			cone, err := NewCone(Diagram, vertex, maps.Clone(components))
+
+			if err != nil {
+				return err
+			}
+			result = append(result, cone)
+
+			return nil
+		}
+
+		obj := objects[i]
+		Fobj := Diagram.MapObject(obj)
+
+		for _, mID := range C.Hom(vertex, Fobj) {
+			components[obj] = mID
+
+			err := search(
+				i+1,
+				vertex,
+				components,
+			)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	for vertex := range C.Objects {
+		err := search(
+			0,
+			vertex,
+			map[Object]MorphismID{},
+		)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return result
+}
+
+func (c *Cone) Morphism(
+	to *Cone,
+) []MorphismID {
+	C := c.Diagram.Destination
+
+	var result []MorphismID
+
+	for _, u := range C.Hom(c.Vertex, to.Vertex) {
+		ok := true
+		for j := range c.Diagram.Source.Objects {
+			lambda := to.Components[j]
+			mu := c.Components[j]
+
+			composed, err := C.Compose(u, lambda)
+			if err != nil {
+				ok = false
+				break
+			}
+
+			if composed != mu {
+				ok = false
+				break
+			}
+		}
+
+		if ok {
+			result = append(result, u)
+		}
+	}
+
+	return result
+}
+
+func (c *Cone) IsLimit() bool {
+	for _, other := range EnumerateCones(c.Diagram) {
+		morphisms := other.Morphism(c)
+
+		// Check existence.
+		if len(morphisms) == 0 {
+			return false
+		}
+
+		// Check uniqueness.
+		if len(morphisms) != 1 {
+			return false
+		}
+	}
+
+	return true
+}
+
+func FindLimits(Diagram *Functor) []*Cone {
+	var result []*Cone
+
+	for _, cone := range EnumerateCones(Diagram) {
+		if cone.IsLimit() {
+			result = append(result, cone)
+		}
+	}
+
+	return result
 }
