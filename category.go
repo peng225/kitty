@@ -306,7 +306,7 @@ func (C *Category) IsIsomorphic(a, b Object) bool {
 	return false
 }
 
-func (C *Category) Opposite() (*Category, error) {
+func (C *Category) Opposite() *Category {
 	objects := maps.Clone(C.Objects)
 
 	morphisms := map[MorphismID]*Morphism{}
@@ -332,8 +332,8 @@ func (C *Category) Opposite() (*Category, error) {
 	}
 	err := D.validate()
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	return D, nil
+	return D
 }

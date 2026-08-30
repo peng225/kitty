@@ -50,7 +50,7 @@ func (c *Cone) validate() error {
 
 		if m.Destination != c.Diagram.MapObject(i) {
 			return fmt.Errorf(
-				"cone component %s has wrong Destination: expected = %s, actual = %s",
+				"cone component %s has wrong destination: expected = %s, actual = %s",
 				mID, c.Diagram.MapObject(i), m.Destination,
 			)
 		}

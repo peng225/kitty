@@ -290,8 +290,7 @@ func TestOpposite(t *testing.T) {
 	compose := map[[2]kitty.MorphismID]kitty.MorphismID{}
 	C, err := kitty.NewCategory(objects, morphisms, compose)
 	require.NoError(t, err)
-	D, err := C.Opposite()
-	require.NoError(t, err)
+	D := C.Opposite()
 	_, ok := D.Objects["a"]
 	require.True(t, ok)
 	_, ok = D.Objects["b"]
