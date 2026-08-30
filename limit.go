@@ -82,6 +82,17 @@ func (c *Cone) validate() error {
 	return nil
 }
 
+func (c *Cone) ToCocone() *Cocone {
+	Dop := c.Diagram.Opposite()
+
+	cocone, err := NewCocone(Dop, c.Vertex, maps.Clone(c.Components))
+	if err != nil {
+		panic(err)
+	}
+
+	return cocone
+}
+
 func EnumerateCones(Diagram *Functor) []*Cone {
 	shape := Diagram.Source
 	C := Diagram.Destination

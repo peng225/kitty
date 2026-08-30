@@ -105,6 +105,63 @@ func TestConeWithOneMapShape(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestToCocone(t *testing.T) {
+	objects1 := []kitty.Object{"a", "b"}
+	morphisms1 := []*kitty.Morphism{
+		{"f1", "a", "b"},
+	}
+	compose1 := map[[2]kitty.MorphismID]kitty.MorphismID{}
+	shape, err := kitty.NewCategory(objects1, morphisms1, compose1)
+	require.NoError(t, err)
+
+	objects2 := []kitty.Object{"p", "q", "r"}
+	morphisms2 := []*kitty.Morphism{
+		{
+			ID:          "g1",
+			Source:      "p",
+			Destination: "q",
+		},
+		{
+			ID:          "g2",
+			Source:      "p",
+			Destination: "r",
+		},
+		{
+			ID:          "g3",
+			Source:      "q",
+			Destination: "r",
+		},
+	}
+	compose2 := map[[2]kitty.MorphismID]kitty.MorphismID{
+		{"g1", "g3"}: "g2",
+	}
+	C, err := kitty.NewCategory(objects2, morphisms2, compose2)
+	require.NoError(t, err)
+
+	objMap := map[kitty.Object]kitty.Object{
+		"a": "q",
+		"b": "r",
+	}
+	mMap := map[kitty.MorphismID]kitty.MorphismID{
+		"f1": "g3",
+	}
+	Diagram, err := kitty.NewFunctor(shape, C, objMap, mMap)
+	require.NoError(t, err)
+
+	vertex := kitty.Object("p")
+	components := map[kitty.Object]kitty.MorphismID{
+		"a": "g1",
+		"b": "g2",
+	}
+	cone1, err := kitty.NewCone(Diagram, vertex, components)
+	require.NoError(t, err)
+
+	cocone := cone1.ToCocone()
+	require.Equal(t, cone1.Vertex, cocone.Vertex)
+	cone2 := cocone.ToCone()
+	require.Equal(t, cone1, cone2)
+}
+
 func TestEnumerateCones(t *testing.T) {
 	objects1 := []kitty.Object{"a", "b"}
 	morphisms1 := []*kitty.Morphism{
