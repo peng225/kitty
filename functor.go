@@ -2,6 +2,7 @@ package kitty
 
 import (
 	"fmt"
+	"maps"
 )
 
 type Functor struct {
@@ -241,4 +242,20 @@ func (F *Functor) IsEssentiallySurjective() bool {
 func (F *Functor) IsEquivalence() bool {
 	return F.IsFaithful() && F.IsFull() &&
 		F.IsEssentiallySurjective()
+}
+
+func (F *Functor) Opposite() *Functor {
+	Cop := F.Source.Opposite()
+	Dop := F.Destination.Opposite()
+
+	result, err := NewFunctor(
+		Cop, Dop,
+		maps.Clone(F.objectMap),
+		maps.Clone(F.morphismMap), // F(f) = g => F^op(f^op) = g^op
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	return result
 }
