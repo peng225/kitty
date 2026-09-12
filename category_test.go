@@ -224,6 +224,130 @@ func TestComplicatedInverseChain(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestCompositionReductionToAnotherOne(t *testing.T) {
+	objects := []kitty.Object{"a", "b", "c"}
+	morphisms := []*kitty.Morphism{
+		{
+			ID:          "f",
+			Source:      "a",
+			Destination: "b",
+		},
+		{
+			ID:          "g",
+			Source:      "b",
+			Destination: "c",
+		},
+		{
+			ID:          "gf",
+			Source:      "a",
+			Destination: "c",
+		},
+	}
+	compose := map[[2]kitty.MorphismID]kitty.MorphismID{
+		{"f", "g"}: "gf",
+	}
+	C, err := kitty.NewCategory(objects, morphisms, compose)
+	require.NoError(t, err)
+
+	gf, err := C.Compose("f", "g")
+	require.NoError(t, err)
+	require.Equal(t, kitty.MorphismID("gf"), gf)
+}
+
+func TestCompositionReductionToIdentity(t *testing.T) {
+	a := kitty.Object("a")
+	b := kitty.Object("b")
+	objects := []kitty.Object{a, b}
+	morphisms := []*kitty.Morphism{
+		{
+			ID:          "f",
+			Source:      "a",
+			Destination: "b",
+		},
+		{
+			ID:          "g",
+			Source:      "b",
+			Destination: "a",
+		},
+	}
+	compose := map[[2]kitty.MorphismID]kitty.MorphismID{
+		{"f", "g"}: kitty.Identity,
+	}
+	C, err := kitty.NewCategory(objects, morphisms, compose)
+	require.NoError(t, err)
+
+	gf, err := C.Compose("f", "g")
+	require.NoError(t, err)
+	require.Equal(t, a.GetIdentityID(), gf)
+}
+
+func TestCompositionComplicatedReduction(t *testing.T) {
+	objects := []kitty.Object{"p", "q", "r", "s", "t"}
+	g7 := &kitty.Morphism{
+		ID:          "g7",
+		Source:      "p",
+		Destination: "q",
+	}
+	morphisms := []*kitty.Morphism{
+		{
+			ID:          "g1",
+			Source:      "p",
+			Destination: "r",
+		},
+		{
+			ID:          "g2",
+			Source:      "p",
+			Destination: "s",
+		},
+		{
+			ID:          "g3",
+			Source:      "p",
+			Destination: "t",
+		},
+		{
+			ID:          "g4",
+			Source:      "q",
+			Destination: "r",
+		},
+		{
+			ID:          "g5",
+			Source:      "q",
+			Destination: "s",
+		},
+		{
+			ID:          "g6",
+			Source:      "q",
+			Destination: "t",
+		},
+		g7, g7.Inverse(),
+		{
+			ID:          "g8",
+			Source:      "r",
+			Destination: "t",
+		},
+		{
+			ID:          "g9",
+			Source:      "s",
+			Destination: "t",
+		},
+	}
+	compose2 := map[[2]kitty.MorphismID]kitty.MorphismID{
+		{"g7", "g4"}: "g1",
+		{"g7", "g5"}: "g2",
+		{"g7", "g6"}: "g3",
+		{"g1", "g8"}: "g3",
+		{"g2", "g9"}: "g3",
+		{"g4", "g8"}: "g6",
+		{"g5", "g9"}: "g6",
+		// FIXME: the following entries should be added automatically.
+		{g7.Inverse().ID, "g1"}: "g4",
+		{g7.Inverse().ID, "g2"}: "g5",
+		{g7.Inverse().ID, "g3"}: "g6",
+	}
+	_, err := kitty.NewCategory(objects, morphisms, compose2)
+	require.NoError(t, err)
+}
+
 func TestHom(t *testing.T) {
 	objects := []kitty.Object{"a", "b"}
 	morphisms := []*kitty.Morphism{

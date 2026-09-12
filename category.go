@@ -141,30 +141,18 @@ func (C *Category) constructComposition() error {
 						containsAsSubsequence(m2IDTokens, m1IDTokens) {
 						continue
 					}
-					// Eliminate the adjacent pair of inverse morphisms.
-					// e.g. m1.ID = fg^{-1}", m2.ID = hgf^{-1} => m1.ID = id, m2.ID = h"
-					for len(m1IDTokens) != 0 && len(m2IDTokens) != 0 {
-						m1FirstMorphism := C.Morphisms[MorphismID(m1IDTokens[0])]
-						m2LastMorphism := C.Morphisms[MorphismID(m2IDTokens[len(m2IDTokens)-1])]
-						if m1FirstMorphism.Inverse().ID == m2LastMorphism.ID {
-							m1IDTokens = m1IDTokens[1:]
-							m2IDTokens = m2IDTokens[:len(m2IDTokens)-1]
-							continue
-						}
-						break
-					}
+
 					var composedID MorphismID
-					switch {
-					case len(m1IDTokens) == 0 && len(m2IDTokens) == 0:
-						composedID = m1.Source.GetIdentityID()
-					case len(m1IDTokens) == 0:
-						composedID = MorphismID(strings.Join(m2IDTokens, "_"))
-					case len(m2IDTokens) == 0:
-						composedID = MorphismID(strings.Join(m1IDTokens, "_"))
-					default:
-						composedID = MorphismID(fmt.Sprintf("%s_%s",
-							strings.Join(m2IDTokens, "_"), strings.Join(m1IDTokens, "_")))
+					allIDTokens, err := C.reduceComposition(m1IDTokens, m2IDTokens)
+					if err != nil {
+						return fmt.Errorf("reduceComposition() failed: %w", err)
 					}
+					if len(allIDTokens) == 0 {
+						composedID = m1.Source.GetIdentityID()
+					} else {
+						composedID = MorphismID(strings.Join(allIDTokens, "_"))
+					}
+
 					C.composeTable[key] = composedID
 					toBeAddedMorphisms = append(toBeAddedMorphisms,
 						&Morphism{
@@ -185,6 +173,52 @@ func (C *Category) constructComposition() error {
 		previousCTableCount = len(C.composeTable)
 	}
 	return errors.New("composition construction stuck detected")
+}
+
+// If possible, reduce the adjacent morphisms to the composition.
+// e.g. m1.ID = qp, m2.ID = r, rq = s => composedID = sf
+func (C *Category) reduceComposition(m1IDTokens, m2IDTokens []string) ([]string, error) {
+	allIDTokens := append(m2IDTokens, m1IDTokens...)
+	for {
+		updated := false
+		for i := range allIDTokens {
+			if i == len(allIDTokens)-1 {
+				break
+			}
+			m2, ok := C.Morphisms[MorphismID(allIDTokens[i])]
+			if !ok {
+				return nil, fmt.Errorf("m2 not found: %s", allIDTokens[i])
+			}
+			m1, ok := C.Morphisms[MorphismID(allIDTokens[i+1])]
+			if !ok {
+				return nil, fmt.Errorf("m1 not found: %s", allIDTokens[i+1])
+			}
+			// If m1 and m2 are the inverse for each other, eliminate them.
+			if m1.Inverse().ID == m2.ID {
+				allIDTokens = append(allIDTokens[:i], allIDTokens[i+2:]...)
+				updated = true
+				break
+			}
+			key := [2]MorphismID{m1.ID, m2.ID}
+			m2m1, ok := C.composeTable[key]
+			if !ok || strings.Contains(string(m2m1), "_") {
+				// FIXME:
+				// If m1 = f, f = h◦g, and m2 = h^{-1}, then
+				// h^{-1} ◦ h should be removed.
+				// Similarly, if m1 = f, f = h◦g, m2 = i, and i◦h = j,
+				// then the result should be j◦g, not i◦f.
+				continue
+			}
+			allIDTokens[i] = string(m2m1)
+			allIDTokens = append(allIDTokens[:i+1], allIDTokens[i+2:]...)
+			updated = true
+			break
+		}
+		if !updated {
+			break
+		}
+	}
+	return allIDTokens, nil
 }
 
 func (C *Category) Compose(f, g MorphismID) (MorphismID, error) {
