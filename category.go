@@ -61,7 +61,7 @@ func NewCategory(
 	C := &Category{
 		Objects:      objects,
 		Morphisms:    make(map[MorphismID]*Morphism),
-		composeTable: compose,
+		composeTable: make(map[[2]MorphismID]MorphismID),
 	}
 
 	for _, m := range morphisms {
@@ -81,11 +81,12 @@ func NewCategory(
 		C.Morphisms[m.ID] = m
 	}
 
-	processedCompose := C.composeTable
 	for k, v := range compose {
 		if v == Identity {
 			// Since k[1]◦k[0] is identity, its object should be the destination of k[1].
-			processedCompose[k] = C.Morphisms[k[1]].Destination.GetIdentityID()
+			C.composeTable[k] = C.Morphisms[k[1]].Destination.GetIdentityID()
+		} else {
+			C.composeTable[k] = v
 		}
 	}
 
