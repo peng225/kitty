@@ -339,10 +339,6 @@ func TestCompositionComplicatedReduction(t *testing.T) {
 		{"g2", "g9"}: "g3",
 		{"g4", "g8"}: "g6",
 		{"g5", "g9"}: "g6",
-		// FIXME: the following entries should be added automatically.
-		{g7.Inverse().ID, "g1"}: "g4",
-		{g7.Inverse().ID, "g2"}: "g5",
-		{g7.Inverse().ID, "g3"}: "g6",
 	}
 	_, err := kitty.NewCategory(objects, morphisms, compose2)
 	require.NoError(t, err)

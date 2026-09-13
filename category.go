@@ -111,6 +111,23 @@ func NewCategory(
 }
 
 func (C *Category) constructComposition() error {
+	for _, m := range C.Morphisms {
+		for k, v := range C.composeTable {
+			// For m ◦ k[1] ◦ k[0], if m ◦ k[1] = id,
+			// then m ◦ v = k[0].
+			if m.Inverse().ID == k[1] {
+				kk := [2]MorphismID{v, m.ID}
+				C.composeTable[kk] = k[0]
+			}
+			// For k[1] ◦ k[0] ◦ m, if k[0] ◦ m = id,
+			// then v ◦ m = k[1].
+			if m.Inverse().ID == k[0] {
+				kk := [2]MorphismID{m.ID, v}
+				C.composeTable[kk] = k[1]
+			}
+		}
+	}
+
 	initialMorphismCount := len(C.Morphisms)
 	previousCTableCount := len(C.composeTable)
 	for len(C.Morphisms) < initialMorphismCount*initialMorphismCount {
@@ -203,11 +220,6 @@ func (C *Category) reduceComposition(m1IDTokens, m2IDTokens []string) ([]string,
 			key := [2]MorphismID{m1.ID, m2.ID}
 			m2m1, ok := C.composeTable[key]
 			if !ok || strings.Contains(string(m2m1), "_") {
-				// FIXME:
-				// If m1 = f, f = h◦g, and m2 = h^{-1}, then
-				// h^{-1} ◦ h should be removed.
-				// Similarly, if m1 = f, f = h◦g, m2 = i, and i◦h = j,
-				// then the result should be j◦g, not i◦f.
 				continue
 			}
 			allIDTokens[i] = string(m2m1)
@@ -262,7 +274,8 @@ func (C *Category) validate() error {
 		}
 
 		if f.Destination != g.Source {
-			return errors.New("invalid composition domain")
+			return fmt.Errorf("invalid composition domain: f = %v, g = %v",
+				*f, *g)
 		}
 
 		r := C.Morphisms[res]
